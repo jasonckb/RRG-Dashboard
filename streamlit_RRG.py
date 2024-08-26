@@ -22,7 +22,6 @@ def calculate_rrg_values(data, benchmark):
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
-
 @st.cache_data
 def get_data(universe, sector=None):
     end_date = datetime.now()
@@ -63,27 +62,33 @@ def get_data(universe, sector=None):
             "XME": "Mining", "AAXJ": "Asia ex Japan", "IBB": "Biotech","DBA":"Agriculture"
         }
     elif universe == "US":
+        benchmark = "^GSPC"
+        sectors = list(sector_universes["US"].keys())
+        sector_names = {
+            "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
+            "XLF": "Financials", "XLC": "Communications", "XLI": "Industrials", "XLE": "Energy",
+            "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
+        }
+    elif universe == "US Sectors":
         if sector:
             benchmark = sector
             sectors = sector_universes["US"][sector]
             sector_names = {s: "" for s in sectors}  # Assign empty strings as names
         else:
-            benchmark = "^GSPC"
-            sectors = list(sector_universes["US"].keys())
-            sector_names = {
-                "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
-                "XLF": "Financials", "XLC": "Communications", "XLI": "Industrials", "XLE": "Energy",
-                "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
-            }
+            st.error("Please select a US sector.")
+            return None, None, None, None
     elif universe == "HK":
+        benchmark = "^HSI"
+        sectors = list(sector_universes["HK"].keys())
+        sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
+    elif universe == "HK Sub-indexes":
         if sector:
             benchmark = sector
             sectors = sector_universes["HK"][sector]
             sector_names = {s: "" for s in sectors}  # Assign empty strings as names
         else:
-            benchmark = "^HSI"
-            sectors = list(sector_universes["HK"].keys())
-            sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
+            st.error("Please select a HK sub-index.")
+            return None, None, None, None
 
     try:
         data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
@@ -184,8 +189,8 @@ st.title("Relative Rotation Graph (RRG) Chart")
 
 st.sidebar.header("Universe Selection")
 
-universe_options = ["WORLD", "US", "HK"]
-universe_names = {"WORLD": "World", "US": "US", "HK": "Hong Kong"}
+universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes"]
+universe_names = {"WORLD": "World", "US": "US", "US Sectors": "US Sectors", "HK": "Hong Kong", "HK Sub-indexes": "HK Sub-indexes"}
 
 selected_universe = st.sidebar.selectbox(
     "Select Universe",
@@ -200,6 +205,9 @@ if selected_universe == "WORLD":
     # No additional selection needed for WORLD
     pass
 elif selected_universe == "US":
+    # No additional selection needed for US main sectors
+    pass
+elif selected_universe == "US Sectors":
     us_sectors = ["XLK", "XLY", "XLV", "XLF", "XLC", "XLI", "XLE", "XLB", "XLP", "XLU", "XLRE"]
     us_sector_names = {
         "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
@@ -216,6 +224,9 @@ elif selected_universe == "US":
     if selected_us_sector:
         sector = selected_us_sector
 elif selected_universe == "HK":
+    # No additional selection needed for HK main sectors
+    pass
+elif selected_universe == "HK Sub-indexes":
     hk_sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
     hk_sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
     st.sidebar.subheader("Hang Seng Sub-indexes")
