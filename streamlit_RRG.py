@@ -64,7 +64,7 @@ def get_data(universe, sector=None):
         if sector:
             benchmark = sector
             sectors = sector_universes["US"][sector]
-            sector_names = {s: s for s in sectors}
+            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
         else:
             benchmark = "^GSPC"
             sectors = list(sector_universes["US"].keys())
@@ -77,7 +77,7 @@ def get_data(universe, sector=None):
         if sector:
             benchmark = sector
             sectors = sector_universes["HK"][sector]
-            sector_names = {s: s for s in sectors}
+            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
         else:
             benchmark = "^HSI"
             sectors = list(sector_universes["HK"].keys())
