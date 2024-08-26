@@ -194,7 +194,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
 
     return fig
 
-
 st.title("Relative Rotation Graph (RRG) Chart")
 
 st.sidebar.header("Universe Selection")
@@ -219,26 +218,18 @@ elif us:
         "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
     }
     st.sidebar.subheader("US Sectors")
-    us_cols = st.sidebar.columns(3)
-    for i, s in enumerate(us_sectors):
-        if us_cols[i % 3].checkbox(us_sector_names[s], key=f"us_{s}"):
-            sector = s
-            for j, other_s in enumerate(us_sectors):
-                if other_s != s:
-                    st.session_state[f"us_{other_s}"] = False
+    selected_us_sector = st.sidebar.selectbox("Select US Sector", options=us_sectors, format_func=lambda x: us_sector_names[x])
+    if selected_us_sector:
+        sector = selected_us_sector
 elif hk:
     universe = "HK"
     world, us = False, False
     hk_sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
     hk_sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
     st.sidebar.subheader("Hang Seng Sub-indexes")
-    hk_cols = st.sidebar.columns(2)
-    for i, s in enumerate(hk_sectors):
-        if hk_cols[i % 2].checkbox(hk_sector_names[s], key=f"hk_{s}"):
-            sector = s
-            for j, other_s in enumerate(hk_sectors):
-                if other_s != s:
-                    st.session_state[f"hk_{other_s}"] = False
+    selected_hk_sector = st.sidebar.selectbox("Select HK Sub-index", options=hk_sectors, format_func=lambda x: hk_sector_names[x])
+    if selected_hk_sector:
+        sector = selected_hk_sector
 else:
     universe = "WORLD"
 
@@ -253,6 +244,3 @@ if universe:
         st.error("No data available for the selected universe and sector. Please try a different selection.")
 else:
     st.write("Please select a universe from the sidebar.")
-
-
-
