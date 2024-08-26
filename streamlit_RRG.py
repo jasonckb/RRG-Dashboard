@@ -47,8 +47,8 @@ def get_data(universe):
         }
     elif universe == "HK":
         benchmark = "^HSI"
-        sectors = ["0001.HK", "0005.HK", "0011.HK", "0388.HK", "0700.HK", "0939.HK", "1299.HK", "2318.HK", "3988.HK", "9988.HK"]
-        sector_names = {sector: sector for sector in sectors}
+        sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
+        sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties","^HSNC": "Commerce & Industry"}
 
     data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
     return data, benchmark, sectors, sector_names
