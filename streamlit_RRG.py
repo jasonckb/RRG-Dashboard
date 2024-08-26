@@ -155,4 +155,3 @@ st.plotly_chart(fig, use_container_width=True)
 st.subheader("Latest Data")
 st.dataframe(data.tail())
 
-print(last_n_weeks)
