@@ -155,17 +155,3 @@ st.plotly_chart(fig, use_container_width=True)
 st.subheader("Latest Data")
 st.dataframe(data.tail())
 
-```
-
-
-Key changes made to implement dynamic range:
-
-1. Reintroduced the calculation of actual minimum and maximum values for both axes:
-   ```python
-   actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-   actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-   actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-   actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
-
-
-
