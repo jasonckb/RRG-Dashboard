@@ -108,37 +108,21 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     weeks_to_plot = 4
     last_n_weeks = rrg_data.iloc[-weeks_to_plot:]
 
-    # Calculate the min and max values for each quadrant
-    quadrant_data = {
-        'Lagging': {'x': [], 'y': []},
-        'Weakening': {'x': [], 'y': []},
-        'Improving': {'x': [], 'y': []},
-        'Leading': {'x': [], 'y': []}
-    }
+    # Calculate the actual min and max values for both axes
+    actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
-    for sector in sectors:
-        x_values = last_n_weeks[f"{sector}_RS-Ratio"]
-        y_values = last_n_weeks[f"{sector}_RS-Momentum"]
-        for x, y in zip(x_values, y_values):
-            if x < 100 and y < 100:
-                quadrant_data['Lagging']['x'].append(x)
-                quadrant_data['Lagging']['y'].append(y)
-            elif x >= 100 and y < 100:
-                quadrant_data['Weakening']['x'].append(x)
-                quadrant_data['Weakening']['y'].append(y)
-            elif x < 100 and y >= 100:
-                quadrant_data['Improving']['x'].append(x)
-                quadrant_data['Improving']['y'].append(y)
-            else:
-                quadrant_data['Leading']['x'].append(x)
-                quadrant_data['Leading']['y'].append(y)
+    # Calculate padding based on data range
+    padding_x = (actual_max_x - actual_min_x) * 0.1
+    padding_y = (actual_max_y - actual_min_y) * 0.1
 
-    # Calculate the overall min and max with padding
-    padding = 1
-    min_x = min(min(quadrant_data['Lagging']['x'] + quadrant_data['Improving']['x'], default=100) - padding, 97)
-    max_x = max(max(quadrant_data['Weakening']['x'] + quadrant_data['Leading']['x'], default=100) + padding, 103)
-    min_y = min(min(quadrant_data['Lagging']['y'] + quadrant_data['Weakening']['y'], default=100) - padding, 97)
-    max_y = max(max(quadrant_data['Improving']['y'] + quadrant_data['Leading']['y'], default=100) + padding, 103)
+    # Set the chart boundaries with adaptive padding
+    min_x = min(actual_min_x - padding_x, 97)
+    max_x = max(actual_max_x + padding_x, 103)
+    min_y = min(actual_min_y - padding_y, 97)
+    max_y = max(actual_max_y + padding_y, 103)
 
     fig = go.Figure()
 
