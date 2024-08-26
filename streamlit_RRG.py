@@ -54,7 +54,7 @@ def get_data(universe, sector=None):
     if universe == "WORLD":
         benchmark = "ACWI"
         sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
-                   "^TWII", "000300", "^N225", "HYG", "LQD", "EEM", "GLD", "XLE", "GDX", "AAXJ","IBB","DBA"]
+                   "^TWII", "000300", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
         sector_names = {
             "^GSPC": "SP500", "^NDX": "Nasdaq 100", "^RUT": "US Small Cap", "^HSI": "Hang Seng",
             "3032.HK": "HS Tech", "^STOXX50E": "Europe", "^BSESN": "India", "^KS11": "Korea",
