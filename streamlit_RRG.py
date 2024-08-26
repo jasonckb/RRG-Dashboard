@@ -1,4 +1,3 @@
-
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -154,4 +153,5 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Latest Data")
 st.dataframe(data.tail())
+
 
