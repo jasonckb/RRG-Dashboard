@@ -64,9 +64,17 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     weeks_to_plot = 4
     last_n_weeks = rrg_data.iloc[-weeks_to_plot:]
 
-    # Fixed scaling approach
-    min_x, max_x = 94, 106
-    min_y, max_y = 94, 106
+    # Calculate the actual min and max values for both axes
+    actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+
+    # Set the chart boundaries to include all data points, but restrict to 96-104 range
+    min_x = max(min(actual_min_x, 96), 96)
+    max_x = min(max(actual_max_x, 104), 104)
+    min_y = max(min(actual_min_y, 96), 96)
+    max_y = min(max(actual_max_y, 104), 104)
 
     fig = go.Figure()
 
@@ -116,7 +124,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     )
 
     # Adjust quadrant label positions
-    label_offset = 3
+    label_offset = (max_x - min_x) * 0.05  # 5% of the x-axis range
     fig.add_annotation(x=min_x + label_offset, y=min_y + label_offset, text="Lagging", showarrow=False, font=dict(size=16))
     fig.add_annotation(x=max_x - label_offset, y=min_y + label_offset, text="Weakening", showarrow=False, font=dict(size=16))
     fig.add_annotation(x=min_x + label_offset, y=max_y - label_offset, text="Improving", showarrow=False, font=dict(size=16))
@@ -147,6 +155,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Latest Data")
 st.dataframe(data.tail())
+
 
 
 
