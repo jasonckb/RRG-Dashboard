@@ -64,17 +64,37 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     weeks_to_plot = 4
     last_n_weeks = rrg_data.iloc[-weeks_to_plot:]
 
-    # Calculate the actual min and max values for both axes
-    actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-    actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-    actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-    actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+    # Calculate the min and max values for each quadrant
+    quadrant_data = {
+        'Lagging': {'x': [], 'y': []},
+        'Weakening': {'x': [], 'y': []},
+        'Improving': {'x': [], 'y': []},
+        'Leading': {'x': [], 'y': []}
+    }
 
-    # Set the chart boundaries to include all data points, but restrict to 96-104 range
-    min_x = max(min(actual_min_x, 96), 96)
-    max_x = min(max(actual_max_x, 104), 104)
-    min_y = max(min(actual_min_y, 96), 96)
-    max_y = min(max(actual_max_y, 104), 104)
+    for sector in sectors:
+        x_values = last_n_weeks[f"{sector}_RS-Ratio"]
+        y_values = last_n_weeks[f"{sector}_RS-Momentum"]
+        for x, y in zip(x_values, y_values):
+            if x < 100 and y < 100:
+                quadrant_data['Lagging']['x'].append(x)
+                quadrant_data['Lagging']['y'].append(y)
+            elif x >= 100 and y < 100:
+                quadrant_data['Weakening']['x'].append(x)
+                quadrant_data['Weakening']['y'].append(y)
+            elif x < 100 and y >= 100:
+                quadrant_data['Improving']['x'].append(x)
+                quadrant_data['Improving']['y'].append(y)
+            else:
+                quadrant_data['Leading']['x'].append(x)
+                quadrant_data['Leading']['y'].append(y)
+
+    # Calculate the overall min and max with padding
+    padding = 1
+    min_x = min(min(quadrant_data['Lagging']['x'] + quadrant_data['Improving']['x'], default=100) - padding, 96)
+    max_x = max(max(quadrant_data['Weakening']['x'] + quadrant_data['Leading']['x'], default=100) + padding, 104)
+    min_y = min(min(quadrant_data['Lagging']['y'] + quadrant_data['Weakening']['y'], default=100) - padding, 96)
+    max_y = max(max(quadrant_data['Improving']['y'] + quadrant_data['Leading']['y'], default=100) + padding, 104)
 
     fig = go.Figure()
 
@@ -114,21 +134,20 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
         shapes=[
-            dict(type="rect", xref="x", yref="y", x0=94, y0=100, x1=100, y1=106, fillcolor="lightblue", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=106, y1=106, fillcolor="lightgreen", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=94, y0=94, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=94, x1=106, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor="lightblue", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor="lightgreen", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=min_x, y0=min_y, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=100, y0=min_y, x1=max_x, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
             dict(type="line", xref="x", yref="y", x0=100, y0=min_y, x1=100, y1=max_y, line=dict(color="black", width=1)),
             dict(type="line", xref="x", yref="y", x0=min_x, y0=100, x1=max_x, y1=100, line=dict(color="black", width=1)),
         ]
     )
 
-    # Adjust quadrant label positions
-    label_offset = (max_x - min_x) * 0.05  # 5% of the x-axis range
-    fig.add_annotation(x=min_x + label_offset, y=min_y + label_offset, text="Lagging", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=max_x - label_offset, y=min_y + label_offset, text="Weakening", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=min_x + label_offset, y=max_y - label_offset, text="Improving", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=max_x - label_offset, y=max_y - label_offset, text="Leading", showarrow=False, font=dict(size=16))
+    # Adjust quadrant label positions to corners
+    fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=dict(size=16), xanchor="left", yanchor="bottom")
+    fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=dict(size=16), xanchor="right", yanchor="bottom")
+    fig.add_annotation(x=min_x, y=max_y, text="Improving", showarrow=False, font=dict(size=16), xanchor="left", yanchor="top")
+    fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=dict(size=16), xanchor="right", yanchor="top")
 
     return fig
 
@@ -155,6 +174,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Latest Data")
 st.dataframe(data.tail())
+
 
 
 
