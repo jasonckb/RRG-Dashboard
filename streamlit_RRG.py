@@ -95,8 +95,6 @@ def get_data(universe, sector=None):
 
     return data, benchmark, sectors, sector_names
 
-
-
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     data_weekly = data.resample('W-FRI').last()
     rrg_data = pd.DataFrame()
@@ -115,14 +113,14 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
     # Calculate padding based on data range
-    padding_x = (actual_max_x - actual_min_x) * 0.1
-    padding_y = (actual_max_y - actual_min_y) * 0.1
+    padding_x = (actual_max_x - actual_min_x) * 0.05
+    padding_y = (actual_max_y - actual_min_y) * 0.05
 
     # Set the chart boundaries with adaptive padding
-    min_x = min(actual_min_x - padding_x, 97)
-    max_x = max(actual_max_x + padding_x, 103)
-    min_y = min(actual_min_y - padding_y, 97)
-    max_y = max(actual_max_y + padding_y, 103)
+    min_x = max(min(actual_min_x - padding_x, 99), actual_min_x - padding_x)
+    max_x = min(max(actual_max_x + padding_x, 101), actual_max_x + padding_x)
+    min_y = max(min(actual_min_y - padding_y, 99), actual_min_y - padding_y)
+    max_y = min(max(actual_max_y + padding_y, 101), actual_max_y + padding_y)
 
     fig = go.Figure()
 
@@ -155,10 +153,12 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
 
     fig.update_layout(
         title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} (Weekly)",
-        xaxis_title="RS-Ratio", yaxis_title="RS-Momentum",
-        width=1200, height=800,
-        xaxis=dict(range=[min_x, max_x], title_font=dict(size=14), dtick=1),
-        yaxis=dict(range=[min_y, max_y], title_font=dict(size=14), scaleanchor="x", scaleratio=1, dtick=1),
+        xaxis_title="RS-Ratio",
+        yaxis_title="RS-Momentum",
+        width=1200,
+        height=800,
+        xaxis=dict(range=[min_x, max_x], title_font=dict(size=14)),
+        yaxis=dict(range=[min_y, max_y], title_font=dict(size=14)),
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
         shapes=[
@@ -178,7 +178,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=dict(size=16), xanchor="right", yanchor="top")
 
     return fig
-
 
 st.title("Relative Rotation Graph (RRG) Chart")
 
