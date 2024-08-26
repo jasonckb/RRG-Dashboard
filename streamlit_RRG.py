@@ -181,6 +181,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
 
     return fig
 
+
 st.title("Relative Rotation Graph (RRG) Chart")
 
 st.sidebar.header("Universe Selection")
@@ -230,11 +231,15 @@ else:
 
 if universe:
     data, benchmark, sectors, sector_names = get_data(universe, sector)
-    fig = create_rrg_chart(data, benchmark, sectors, sector_names, universe)
-    st.plotly_chart(fig, use_container_width=True)
-    st.subheader("Latest Data")
-    st.dataframe(data.tail())
+    if data is not None and not data.empty:
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, universe)
+        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Latest Data")
+        st.dataframe(data.tail())
+    else:
+        st.error("No data available for the selected universe and sector. Please try a different selection.")
 else:
     st.write("Please select a universe from the sidebar.")
+
 
 
