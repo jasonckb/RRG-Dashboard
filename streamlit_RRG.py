@@ -194,23 +194,27 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
 
     return fig
 
+
 st.title("Relative Rotation Graph (RRG) Chart")
 
 st.sidebar.header("Universe Selection")
-cols = st.sidebar.columns(3)
-world = cols[0].checkbox("World", value=True)
-us = cols[1].checkbox("US")
-hk = cols[2].checkbox("HK")
 
-universe = None
+universe_options = ["WORLD", "US", "HK"]
+universe_names = {"WORLD": "World", "US": "US", "HK": "Hong Kong"}
+
+selected_universe = st.sidebar.selectbox(
+    "Select Universe",
+    options=universe_options,
+    format_func=lambda x: universe_names[x],
+    key="universe_selector"
+)
+
 sector = None
 
-if world:
-    universe = "WORLD"
-    us, hk = False, False
-elif us:
-    universe = "US"
-    world, hk = False, False
+if selected_universe == "WORLD":
+    # No additional selection needed for WORLD
+    pass
+elif selected_universe == "US":
     us_sectors = ["XLK", "XLY", "XLV", "XLF", "XLC", "XLI", "XLE", "XLB", "XLP", "XLU", "XLRE"]
     us_sector_names = {
         "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
@@ -218,25 +222,31 @@ elif us:
         "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
     }
     st.sidebar.subheader("US Sectors")
-    selected_us_sector = st.sidebar.selectbox("Select US Sector", options=us_sectors, format_func=lambda x: us_sector_names[x])
+    selected_us_sector = st.sidebar.selectbox(
+        "Select US Sector",
+        options=us_sectors,
+        format_func=lambda x: us_sector_names[x],
+        key="us_sector_selector"
+    )
     if selected_us_sector:
         sector = selected_us_sector
-elif hk:
-    universe = "HK"
-    world, us = False, False
+elif selected_universe == "HK":
     hk_sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
     hk_sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
     st.sidebar.subheader("Hang Seng Sub-indexes")
-    selected_hk_sector = st.sidebar.selectbox("Select HK Sub-index", options=hk_sectors, format_func=lambda x: hk_sector_names[x])
+    selected_hk_sector = st.sidebar.selectbox(
+        "Select HK Sub-index",
+        options=hk_sectors,
+        format_func=lambda x: hk_sector_names[x],
+        key="hk_sector_selector"
+    )
     if selected_hk_sector:
         sector = selected_hk_sector
-else:
-    universe = "WORLD"
 
-if universe:
-    data, benchmark, sectors, sector_names = get_data(universe, sector)
+if selected_universe:
+    data, benchmark, sectors, sector_names = get_data(selected_universe, sector)
     if data is not None and not data.empty:
-        fig = create_rrg_chart(data, benchmark, sectors, sector_names, universe)
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe)
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
         st.dataframe(data.tail())
