@@ -122,7 +122,8 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         ]
     )
 
-    label_offset = 1
+    # Adjust quadrant label positions
+    label_offset = (max_x - min_x) * 0.05  # 5% of the x-axis range
     fig.add_annotation(x=min_x + label_offset, y=min_y + label_offset, text="Lagging", showarrow=False, font=dict(size=16))
     fig.add_annotation(x=max_x - label_offset, y=min_y + label_offset, text="Weakening", showarrow=False, font=dict(size=16))
     fig.add_annotation(x=min_x + label_offset, y=max_y - label_offset, text="Improving", showarrow=False, font=dict(size=16))
@@ -153,5 +154,18 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Latest Data")
 st.dataframe(data.tail())
+
+```
+
+
+Key changes made to implement dynamic range:
+
+1. Reintroduced the calculation of actual minimum and maximum values for both axes:
+   ```python
+   actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+   actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+   actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+   actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+
 
 
