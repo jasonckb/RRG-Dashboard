@@ -94,31 +94,6 @@ def get_data(universe, sector=None):
 
     return data, benchmark, sectors, sector_names
 
-```
-
-Key changes made:
-
-1. For the US universe, when a sector is selected:
-   ```python
-   if sector:
-       benchmark = sector
-       sectors = sector_universes["US"][sector]
-       sector_names = {s: s for s in sectors}
-   ```
-
-2. For the HK universe, when a sector (sub-index) is selected:
-   ```python
-   if sector:
-       benchmark = sector
-       sectors = sector_universes["HK"][sector]
-       sector_names = {s: s for s in sectors}
-   ```
-
-3. Added error handling to display a specific message when no data is available:
-   ```python
-   if data.empty:
-       st.error(f"No data available for the selected universe and sector.")
-       return None, benchmark, sectors, sector_names
 
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
