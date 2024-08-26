@@ -22,7 +22,7 @@ def calculate_rrg_values(data, benchmark):
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
-@st.cache_data
+
 @st.cache_data
 def get_data(universe, sector=None):
     end_date = datetime.now()
