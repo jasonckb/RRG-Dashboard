@@ -154,7 +154,8 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         fig.add_trace(go.Scatter(
             x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
             name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
-            text=[sector], textposition="top center", legendgroup=sector, showlegend=False
+            text=[sector], textposition="top center", legendgroup=sector, showlegend=False,
+            textfont=dict(color='black', size=12, family='Arial Black')  # Make ticker text darker and bolded
         ))
 
     fig.update_layout(
@@ -177,15 +178,16 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         ]
     )
 
-    # Adjust quadrant label positions to corners
-    fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=dict(size=16), xanchor="left", yanchor="bottom")
-    fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=dict(size=16), xanchor="right", yanchor="bottom")
-    fig.add_annotation(x=min_x, y=max_y, text="Improving", showarrow=False, font=dict(size=16), xanchor="left", yanchor="top")
-    fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=dict(size=16), xanchor="right", yanchor="top")
+    # Adjust quadrant label positions to corners with larger, darker text
+    label_font = dict(size=32, color='black', family='Arial Black')
+    fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
+    fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
+    fig.add_annotation(x=min_x, y=max_y, text="Improving", showarrow=False, font=label_font, xanchor="left", yanchor="top")
+    fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
 
-st.title("Relative Rotation Graph (RRG) Chart")
+st.title("Relative Rotation Graph (RRG) Chart by JC")
 
 st.sidebar.header("Universe Selection")
 
