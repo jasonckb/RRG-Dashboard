@@ -23,6 +23,7 @@ def calculate_rrg_values(data, benchmark):
     return rs, rm
 
 @st.cache_data
+@st.cache_data
 def get_data(universe, sector=None):
     end_date = datetime.now()
     start_date = end_date - timedelta(weeks=100)
@@ -60,11 +61,12 @@ def get_data(universe, sector=None):
             "LQD": "IG Corporate Bond", "EEM": "Emerging Mkt Equity", "GLD": "Gold"
         }
     elif universe == "US":
-        benchmark = "^GSPC"
         if sector:
+            benchmark = sector
             sectors = sector_universes["US"][sector]
             sector_names = {s: s for s in sectors}
         else:
+            benchmark = "^GSPC"
             sectors = list(sector_universes["US"].keys())
             sector_names = {
                 "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
@@ -72,16 +74,52 @@ def get_data(universe, sector=None):
                 "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
             }
     elif universe == "HK":
-        benchmark = "^HSI"
         if sector:
+            benchmark = sector
             sectors = sector_universes["HK"][sector]
             sector_names = {s: s for s in sectors}
         else:
+            benchmark = "^HSI"
             sectors = list(sector_universes["HK"].keys())
             sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
 
-    data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
+    try:
+        data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
+        if data.empty:
+            st.error(f"No data available for the selected universe and sector.")
+            return None, benchmark, sectors, sector_names
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return None, benchmark, sectors, sector_names
+
     return data, benchmark, sectors, sector_names
+
+```
+
+Key changes made:
+
+1. For the US universe, when a sector is selected:
+   ```python
+   if sector:
+       benchmark = sector
+       sectors = sector_universes["US"][sector]
+       sector_names = {s: s for s in sectors}
+   ```
+
+2. For the HK universe, when a sector (sub-index) is selected:
+   ```python
+   if sector:
+       benchmark = sector
+       sectors = sector_universes["HK"][sector]
+       sector_names = {s: s for s in sectors}
+   ```
+
+3. Added error handling to display a specific message when no data is available:
+   ```python
+   if data.empty:
+       st.error(f"No data available for the selected universe and sector.")
+       return None, benchmark, sectors, sector_names
+
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     data_weekly = data.resample('W-FRI').last()
