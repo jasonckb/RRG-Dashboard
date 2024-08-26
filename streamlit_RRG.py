@@ -107,17 +107,17 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
 
     fig.update_layout(
         title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} (Weekly)",
-        xaxis_title="JdK RS-Ratio", yaxis_title="JdK RS-Momentum",
+        xaxis_title="RS-Ratio", yaxis_title="RS-Momentum",
         width=1200, height=800,
         xaxis=dict(range=[min_x, max_x], title_font=dict(size=14), dtick=1),
         yaxis=dict(range=[min_y, max_y], title_font=dict(size=14), scaleanchor="x", scaleratio=1, dtick=1),
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
         shapes=[
-            dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor="lightblue", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor="lightgreen", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=min_x, y0=min_y, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=min_y, x1=max_x, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=94, y0=100, x1=100, y1=106, fillcolor="lightblue", opacity=0.5, line_width=0).
+            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=106, y1=106, fillcolor="lightgreen", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=94, y0=94, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=100, y0=94, x1=106, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
             dict(type="line", xref="x", yref="y", x0=100, y0=min_y, x1=100, y1=max_y, line=dict(color="black", width=1)),
             dict(type="line", xref="x", yref="y", x0=min_x, y0=100, x1=max_x, y1=100, line=dict(color="black", width=1)),
         ]
