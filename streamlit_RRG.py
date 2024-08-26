@@ -114,7 +114,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
         shapes=[
-            dict(type="rect", xref="x", yref="y", x0=94, y0=100, x1=100, y1=106, fillcolor="lightblue", opacity=0.5, line_width=0).
+            dict(type="rect", xref="x", yref="y", x0=94, y0=100, x1=100, y1=106, fillcolor="lightblue", opacity=0.5, line_width=0),
             dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=106, y1=106, fillcolor="lightgreen", opacity=0.5, line_width=0),
             dict(type="rect", xref="x", yref="y", x0=94, y0=94, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
             dict(type="rect", xref="x", yref="y", x0=100, y0=94, x1=106, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
