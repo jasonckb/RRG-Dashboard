@@ -69,11 +69,16 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
     actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
-    padding = 0.5
-    min_x = min(actual_min_x - padding, 97)
-    max_x = max(actual_max_x + padding, 103)
-    min_y = min(actual_min_y - padding, 97)
-    max_y = max(actual_max_y + padding, 103)
+    # Calculate dynamic padding
+    x_range = actual_max_x - actual_min_x
+    y_range = actual_max_y - actual_min_y
+    padding_x = max(x_range * 0.1, 1)  # At least 1 unit or 10% of range
+    padding_y = max(y_range * 0.1, 1)  # At least 1 unit or 10% of range
+
+    min_x = max(min(actual_min_x - padding_x, 98), 94)
+    max_x = min(max(actual_max_x + padding_x, 102), 106)
+    min_y = max(min(actual_min_y - padding_y, 98), 94)
+    max_y = min(max(actual_max_y + padding_y, 102), 106)
 
     fig = go.Figure()
 
@@ -123,11 +128,12 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     )
 
     # Adjust quadrant label positions
-    label_offset = (max_x - min_x) * 0.05  # 5% of the x-axis range
-    fig.add_annotation(x=min_x + label_offset, y=min_y + label_offset, text="Lagging", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=max_x - label_offset, y=min_y + label_offset, text="Weakening", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=min_x + label_offset, y=max_y - label_offset, text="Improving", showarrow=False, font=dict(size=16))
-    fig.add_annotation(x=max_x - label_offset, y=max_y - label_offset, text="Leading", showarrow=False, font=dict(size=16))
+    label_offset_x = (max_x - min_x) * 0.05  # 5% of the x-axis range
+    label_offset_y = (max_y - min_y) * 0.05  # 5% of the y-axis range
+    fig.add_annotation(x=min_x + label_offset_x, y=min_y + label_offset_y, text="Lagging", showarrow=False, font=dict(size=16))
+    fig.add_annotation(x=max_x - label_offset_x, y=min_y + label_offset_y, text="Weakening", showarrow=False, font=dict(size=16))
+    fig.add_annotation(x=min_x + label_offset_x, y=max_y - label_offset_y, text="Improving", showarrow=False, font=dict(size=16))
+    fig.add_annotation(x=max_x - label_offset_x, y=max_y - label_offset_y, text="Leading", showarrow=False, font=dict(size=16))
 
     return fig
 
@@ -154,4 +160,6 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Latest Data")
 st.dataframe(data.tail())
+
+
 
