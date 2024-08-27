@@ -12,21 +12,13 @@ def ma(data, period):
     return data.rolling(window=period).mean()
 
 @st.cache_data
-def calculate_rrg_values(data, benchmark, timeframe):
+def calculate_rrg_values(data, benchmark):
     sbr = data / benchmark
-    if timeframe == "Weekly":
-        rs1 = ma(sbr, 10)
-        rs2 = ma(sbr, 26)
-    else:  # Daily
-        rs1 = ma(sbr, 10)
-        rs2 = ma(sbr, 26)
+    rs1 = ma(sbr, 10)
+    rs2 = ma(sbr, 26)
     rs = 100 * ((rs1 - rs2) / rs2 + 1)
-    if timeframe == "Weekly":
-        rm1 = ma(rs, 1)
-        rm2 = ma(rs, 4)
-    else:  # Daily
-        rm1 = ma(rs, 1)
-        rm2 = ma(rs, 5)
+    rm1 = ma(rs, 1)
+    rm2 = ma(rs, 4)
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
