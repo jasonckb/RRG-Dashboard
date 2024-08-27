@@ -120,19 +120,23 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 
     rrg_data = pd.DataFrame()
     for sector in sectors:
-        rs_ratio, rs_momentum = calculate_rrg_values(data_resampled[sector], data_resampled[benchmark], timeframe)
+        rs_ratio, rs_momentum = calculate_rrg_values(data_resampled[sector], data_resampled[benchmark])
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    periods_to_plot = 4 if timeframe == "Weekly" else 20  # 4 weeks or 20 days
-    last_n_periods = rrg_data.iloc[-periods_to_plot:]
+    # Calculate the min and max values with padding
+    padding = 0.05  # 5% padding
+    min_x = rrg_data[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    max_x = rrg_data[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    min_y = rrg_data[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    max_y = rrg_data[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
-    # Calculate the min and max values with a larger buffer
-    buffer = 10  # Increase this value to expand the visible area
-    min_x = max(80, last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min() - buffer)
-    max_x = min(120, last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max() + buffer)
-    min_y = max(80, last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min() - buffer)
-    max_y = min(120, last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max() + buffer)
+    range_x = max_x - min_x
+    range_y = max_y - min_y
+    min_x = max(min_x - range_x * padding, 90)  # Ensure minimum is not less than 90
+    max_x = min(max_x + range_x * padding, 110)  # Ensure maximum is not more than 110
+    min_y = max(min_y - range_y * padding, 90)
+    max_y = min(max_y + range_y * padding, 110)
 
     fig = go.Figure()
 
@@ -146,9 +150,9 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         else: return "Leading"
 
     for sector in sectors:
-        x_values = last_n_periods[f"{sector}_RS-Ratio"]
-        y_values = last_n_periods[f"{sector}_RS-Momentum"]
-        if not x_values.isnull().all() and not y_values.isnull().all():  # Only plot if data exists
+        x_values = rrg_data[f"{sector}_RS-Ratio"].dropna()
+        y_values = rrg_data[f"{sector}_RS-Momentum"].dropna()
+        if len(x_values) > 0 and len(y_values) > 0:
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
@@ -185,7 +189,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         ]
     )
 
-    # Adjust quadrant label positions back to corners
+    # Adjust quadrant label positions to corners
     label_font = dict(size=32, color='black', family='Arial Black')
     fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
     fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
