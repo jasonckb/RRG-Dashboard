@@ -1,8 +1,3 @@
-Pasted content
-12.58 KB • 241 extracted lines
-
-Formatting may be inconsistent from source.
-
 import streamlit as st
 import yfinance as yf
 import pandas as pd
