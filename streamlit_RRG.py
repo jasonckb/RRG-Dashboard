@@ -127,23 +127,18 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     periods_to_plot = 4 if timeframe == "Weekly" else 20  # 4 weeks or 20 days
     last_n_periods = rrg_data.iloc[-periods_to_plot:]
 
-    actual_min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-    actual_max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-    actual_min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-    actual_max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
-
-    padding_x = (actual_max_x - actual_min_x) * 0.05
-    padding_y = (actual_max_y - actual_min_y) * 0.05
-
-    min_x = max(min(actual_min_x - padding_x, 99), actual_min_x - padding_x)
-    max_x = min(max(actual_max_x + padding_x, 101), actual_max_x + padding_x)
-    min_y = max(min(actual_min_y - padding_y, 99), actual_min_y - padding_y)
-    max_y = min(max(actual_max_y + padding_y, 101), actual_max_y + padding_y)
+    # Calculate the min and max values with a larger buffer
+    buffer = 5  # Increase this value to expand the visible area
+    min_x = max(0, last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min() - buffer)
+    max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max() + buffer
+    min_y = max(0, last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min() - buffer)
+    max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max() + buffer
 
     fig = go.Figure()
 
-    quadrant_colors = {"Lagging": "pink", "Weakening": "lightyellow", "Improving": "lightblue", "Leading": "lightgreen"}
-    curve_colors = {"Lagging": "red", "Weakening": "orange", "Improving": "darkblue", "Leading": "darkgreen"}
+    quadrant_colors = {"Lagging": "rgba(255,192,203,0.7)", "Weakening": "rgba(255,255,224,0.7)", 
+                       "Improving": "rgba(173,216,230,0.7)", "Leading": "rgba(144,238,144,0.7)"}
+    curve_colors = {"Lagging": "red", "Weakening": "orange", "Improving": "blue", "Leading": "green"}
 
     def get_quadrant(x, y):
         if x < 100 and y < 100: return "Lagging"
@@ -154,21 +149,22 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     for sector in sectors:
         x_values = last_n_periods[f"{sector}_RS-Ratio"]
         y_values = last_n_periods[f"{sector}_RS-Momentum"]
-        current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
-        color = curve_colors[current_quadrant]
-        
-        fig.add_trace(go.Scatter(
-            x=x_values, y=y_values, mode='lines+markers', name=f"{sector} ({sector_names[sector]})",
-            line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
-            legendgroup=sector, showlegend=True
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
-            name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
-            text=[sector], textposition="top center", legendgroup=sector, showlegend=False,
-            textfont=dict(color='black', size=12, family='Arial Black')  # Make ticker text darker and bolded
-        ))
+        if not x_values.isnull().all() and not y_values.isnull().all():  # Only plot if data exists
+            current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
+            color = curve_colors[current_quadrant]
+            
+            fig.add_trace(go.Scatter(
+                x=x_values, y=y_values, mode='lines+markers', name=f"{sector} ({sector_names[sector]})",
+                line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
+                legendgroup=sector, showlegend=True
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
+                name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
+                text=[sector], textposition="top center", legendgroup=sector, showlegend=False,
+                textfont=dict(color='black', size=12, family='Arial Black')
+            ))
 
     fig.update_layout(
         title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} ({timeframe})",
@@ -181,10 +177,10 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
         shapes=[
-            dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor="lightblue", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor="lightgreen", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=min_x, y0=min_y, x1=100, y1=100, fillcolor="pink", opacity=0.5, line_width=0),
-            dict(type="rect", xref="x", yref="y", x0=100, y0=min_y, x1=max_x, y1=100, fillcolor="lightyellow", opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor=quadrant_colors["Improving"], opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor=quadrant_colors["Leading"], opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=min_x, y0=min_y, x1=100, y1=100, fillcolor=quadrant_colors["Lagging"], opacity=0.5, line_width=0),
+            dict(type="rect", xref="x", yref="y", x0=100, y0=min_y, x1=max_x, y1=100, fillcolor=quadrant_colors["Weakening"], opacity=0.5, line_width=0),
             dict(type="line", xref="x", yref="y", x0=100, y0=min_y, x1=100, y1=max_y, line=dict(color="black", width=1)),
             dict(type="line", xref="x", yref="y", x0=min_x, y0=100, x1=max_x, y1=100, line=dict(color="black", width=1)),
         ]
@@ -192,10 +188,10 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 
     # Adjust quadrant label positions to corners with larger, darker text
     label_font = dict(size=32, color='black', family='Arial Black')
-    fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
-    fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
-    fig.add_annotation(x=min_x, y=max_y, text="Improving", showarrow=False, font=label_font, xanchor="left", yanchor="top")
-    fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=label_font, xanchor="right", yanchor="top")
+    fig.add_annotation(x=(min_x+100)/2, y=(min_y+100)/2, text="Lagging", showarrow=False, font=label_font)
+    fig.add_annotation(x=(100+max_x)/2, y=(min_y+100)/2, text="Weakening", showarrow=False, font=label_font)
+    fig.add_annotation(x=(min_x+100)/2, y=(100+max_y)/2, text="Improving", showarrow=False, font=label_font)
+    fig.add_annotation(x=(100+max_x)/2, y=(100+max_y)/2, text="Leading", showarrow=False, font=label_font)
 
     return fig
 
