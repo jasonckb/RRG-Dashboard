@@ -151,8 +151,14 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
+            # Modify the legend label based on the universe
+            if universe in ["US Sectors", "HK Sub-indexes"]:
+                legend_label = sector
+            else:
+                legend_label = f"{sector} ({sector_names[sector]})"
+            
             fig.add_trace(go.Scatter(
-                x=x_values, y=y_values, mode='lines+markers', name=f"{sector} ({sector_names[sector]})",
+                x=x_values, y=y_values, mode='lines+markers', name=legend_label,
                 line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
                 legendgroup=sector, showlegend=True
             ))
