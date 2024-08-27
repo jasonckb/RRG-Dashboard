@@ -12,20 +12,31 @@ def ma(data, period):
     return data.rolling(window=period).mean()
 
 @st.cache_data
-def calculate_rrg_values(data, benchmark):
+def calculate_rrg_values(data, benchmark, timeframe):
     sbr = data / benchmark
-    rs1 = ma(sbr, 10)
-    rs2 = ma(sbr, 26)
+    if timeframe == "Weekly":
+        rs1 = ma(sbr, 10)
+        rs2 = ma(sbr, 26)
+    else:  # Daily
+        rs1 = ma(sbr, 50)
+        rs2 = ma(sbr, 130)
     rs = 100 * ((rs1 - rs2) / rs2 + 1)
-    rm1 = ma(rs, 1)
-    rm2 = ma(rs, 4)
+    if timeframe == "Weekly":
+        rm1 = ma(rs, 1)
+        rm2 = ma(rs, 4)
+    else:  # Daily
+        rm1 = ma(rs, 5)
+        rm2 = ma(rs, 20)
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
 @st.cache_data
-def get_data(universe, sector=None):
+def get_data(universe, sector, timeframe):
     end_date = datetime.now()
-    start_date = end_date - timedelta(weeks=100)
+    if timeframe == "Weekly":
+        start_date = end_date - timedelta(weeks=100)
+    else:  # Daily
+        start_date = end_date - timedelta(days=500)
 
     sector_universes = {
         "US": {
@@ -53,11 +64,11 @@ def get_data(universe, sector=None):
     if universe == "WORLD":
         benchmark = "ACWI"
         sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
-                   "^TWII", "000300.SS", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
+                   "^TWII", "000300", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
         sector_names = {
             "^GSPC": "SP500", "^NDX": "Nasdaq 100", "^RUT": "US Small Cap", "^HSI": "Hang Seng",
             "3032.HK": "HS Tech", "^STOXX50E": "Europe", "^BSESN": "India", "^KS11": "Korea",
-            "^TWII": "Taiwan", "000300.SS": "China 300", "^N225": "Japan", "HYG": "High Yield Bond",
+            "^TWII": "Taiwan", "000300": "China 300", "^N225": "Japan", "HYG": "High Yield Bond",
             "AGG": "IG Corporate Bond", "EEM": "Emerging Mkt Equity", "GDX": "Gold", "XLE": "Energy",
             "XME": "Mining", "AAXJ": "Asia ex Japan", "IBB": "Biotech","DBA":"Agriculture"
         }
@@ -101,28 +112,29 @@ def get_data(universe, sector=None):
 
     return data, benchmark, sectors, sector_names
 
-def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
-    data_weekly = data.resample('W-FRI').last()
+def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
+    if timeframe == "Weekly":
+        data_resampled = data.resample('W-FRI').last()
+    else:  # Daily
+        data_resampled = data
+
     rrg_data = pd.DataFrame()
     for sector in sectors:
-        rs_ratio, rs_momentum = calculate_rrg_values(data_weekly[sector], data_weekly[benchmark])
+        rs_ratio, rs_momentum = calculate_rrg_values(data_resampled[sector], data_resampled[benchmark], timeframe)
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    weeks_to_plot = 4
-    last_n_weeks = rrg_data.iloc[-weeks_to_plot:]
+    periods_to_plot = 4 if timeframe == "Weekly" else 20  # 4 weeks or 20 days
+    last_n_periods = rrg_data.iloc[-periods_to_plot:]
 
-    # Calculate the actual min and max values for both axes
-    actual_min_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-    actual_max_x = last_n_weeks[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-    actual_min_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-    actual_max_y = last_n_weeks[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+    actual_min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    actual_max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    actual_min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    actual_max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
-    # Calculate padding based on data range
     padding_x = (actual_max_x - actual_min_x) * 0.05
     padding_y = (actual_max_y - actual_min_y) * 0.05
 
-    # Set the chart boundaries with adaptive padding
     min_x = max(min(actual_min_x - padding_x, 99), actual_min_x - padding_x)
     max_x = min(max(actual_max_x + padding_x, 101), actual_max_x + padding_x)
     min_y = max(min(actual_min_y - padding_y, 99), actual_min_y - padding_y)
@@ -140,8 +152,8 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         else: return "Leading"
 
     for sector in sectors:
-        x_values = last_n_weeks[f"{sector}_RS-Ratio"]
-        y_values = last_n_weeks[f"{sector}_RS-Momentum"]
+        x_values = last_n_periods[f"{sector}_RS-Ratio"]
+        y_values = last_n_periods[f"{sector}_RS-Momentum"]
         current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
         color = curve_colors[current_quadrant]
         
@@ -159,7 +171,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
         ))
 
     fig.update_layout(
-        title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} (Weekly)",
+        title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} ({timeframe})",
         xaxis_title="RS-Ratio",
         yaxis_title="RS-Momentum",
         width=1200,
@@ -188,6 +200,15 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe):
     return fig
 
 st.title("Relative Rotation Graph (RRG) Chart by JC")
+
+st.sidebar.header("Chart Settings")
+
+# Timeframe selection
+timeframe = st.sidebar.selectbox(
+    "Select Timeframe",
+    options=["Weekly", "Daily"],
+    key="timeframe_selector"
+)
 
 st.sidebar.header("Universe Selection")
 
@@ -242,9 +263,9 @@ elif selected_universe == "HK Sub-indexes":
         sector = selected_hk_sector
 
 if selected_universe:
-    data, benchmark, sectors, sector_names = get_data(selected_universe, sector)
+    data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe)
     if data is not None and not data.empty:
-        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe)
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe)
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
         st.dataframe(data.tail())
