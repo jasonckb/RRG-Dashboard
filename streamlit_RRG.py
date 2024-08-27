@@ -151,11 +151,13 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
-            # Modify the legend label based on the universe
+            # Modify the legend label and chart label based on the universe
             if universe in ["US Sectors", "HK Sub-indexes"]:
                 legend_label = sector
+                chart_label = sector
             else:
                 legend_label = f"{sector} ({sector_names[sector]})"
+                chart_label = f"({sector_names[sector]})"
             
             fig.add_trace(go.Scatter(
                 x=x_values, y=y_values, mode='lines+markers', name=legend_label,
@@ -170,7 +172,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             fig.add_trace(go.Scatter(
                 x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
                 name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
-                text=[sector], textposition=text_position, legendgroup=sector, showlegend=False,
+                text=[chart_label], textposition=text_position, legendgroup=sector, showlegend=False,
                 textfont=dict(color='black', size=12, family='Arial Black')
             ))
 
@@ -202,6 +204,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
+
 
 
 st.title("Relative Rotation Graph (RRG) Chart by JC")
