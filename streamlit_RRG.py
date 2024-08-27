@@ -116,12 +116,15 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
+    # Use only the last 5 data points (current + 4 historical)
+    last_n_periods = rrg_data.iloc[-5:]
+
     # Calculate the min and max values with padding
     padding = 0.05  # 5% padding
-    min_x = rrg_data[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-    max_x = rrg_data[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-    min_y = rrg_data[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-    max_y = rrg_data[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+    min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
     range_x = max_x - min_x
     range_y = max_y - min_y
@@ -142,8 +145,8 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         else: return "Leading"
 
     for sector in sectors:
-        x_values = rrg_data[f"{sector}_RS-Ratio"].dropna()
-        y_values = rrg_data[f"{sector}_RS-Momentum"].dropna()
+        x_values = last_n_periods[f"{sector}_RS-Ratio"].dropna()
+        y_values = last_n_periods[f"{sector}_RS-Momentum"].dropna()
         if len(x_values) > 0 and len(y_values) > 0:
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
@@ -160,6 +163,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 text=[sector], textposition="top center", legendgroup=sector, showlegend=False,
                 textfont=dict(color='black', size=12, family='Arial Black')
             ))
+
 
     fig.update_layout(
         title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} ({timeframe})",
