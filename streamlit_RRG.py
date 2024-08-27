@@ -58,19 +58,19 @@ def get_data(universe, sector, timeframe):
         sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
                    "^TWII", "000300.SS", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
         sector_names = {
-            "^GSPC": "標普500", "^NDX": "納指100", "^RUT": "羅素2000", "^HSI": "Hang Seng",
-            "3032.HK": "HS Tech", "^STOXX50E": "Europe", "^BSESN": "India", "^KS11": "Korea",
-            "^TWII": "Taiwan", "000300.SS": "China 300", "^N225": "Japan", "HYG": "High Yield Bond",
-            "AGG": "IG Corporate Bond", "EEM": "Emerging Mkt Equity", "GDX": "Gold", "XLE": "Energy",
-            "XME": "Mining", "AAXJ": "Asia ex Japan", "IBB": "Biotech","DBA":"Agriculture"
+            "^GSPC": "標普500", "^NDX": "納指100", "^RUT": "羅素2000", "^HSI": "恆指",
+            "3032.HK": "恒生科技", "^STOXX50E": "歐洲", "^BSESN": "印度", "^KS11": "韓國",
+            "^TWII": "台灣", "000300.SS": "滬深300", "^N225": "日本", "HYG": "高收益債券",
+            "AGG": "投資級別債券", "EEM": "新興市場", "GDX": "金礦", "XLE": "能源",
+            "XME": "礦業", "AAXJ": "亞太日本除外", "IBB": "生物科技","DBA":"農業"
         }
     elif universe == "US":
         benchmark = "^GSPC"
         sectors = list(sector_universes["US"].keys())
         sector_names = {
-            "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
-            "XLF": "Financials", "XLC": "Communications", "XLI": "Industrials", "XLE": "Energy",
-            "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
+            "XLK": "科技", "XLY": "非必須消費", "XLV": "健康護理",
+            "XLF": "金融", "XLC": "通訊", "XLI": "工業", "XLE": "能源",
+            "XLB": "物料", "XLP": "必須消費", "XLU": "公用", "XLRE": "房地產"
         }
     elif universe == "US Sectors":
         if sector:
@@ -83,7 +83,7 @@ def get_data(universe, sector, timeframe):
     elif universe == "HK":
         benchmark = "^HSI"
         sectors = list(sector_universes["HK"].keys())
-        sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
+        sector_names = {"^HSNU": "公用", "^HSNF": "金融", "^HSNP": "地產", "^HSNC": "工商"}
     elif universe == "HK Sub-indexes":
         if sector:
             benchmark = sector
