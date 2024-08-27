@@ -18,15 +18,15 @@ def calculate_rrg_values(data, benchmark, timeframe):
         rs1 = ma(sbr, 10)
         rs2 = ma(sbr, 26)
     else:  # Daily
-        rs1 = ma(sbr, 50)
-        rs2 = ma(sbr, 130)
+        rs1 = ma(sbr, 10)
+        rs2 = ma(sbr, 26)
     rs = 100 * ((rs1 - rs2) / rs2 + 1)
     if timeframe == "Weekly":
         rm1 = ma(rs, 1)
         rm2 = ma(rs, 4)
     else:  # Daily
-        rm1 = ma(rs, 5)
-        rm2 = ma(rs, 20)
+        rm1 = ma(rs, 1)
+        rm2 = ma(rs, 5)
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
