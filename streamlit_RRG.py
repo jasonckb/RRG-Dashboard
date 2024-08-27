@@ -22,11 +22,6 @@ def calculate_rrg_values(data, benchmark):
     rm = 100 * ((rm1 - rm2) / rm2 + 1)
     return rs, rm
 
-
-@st.cache_data
-I apologize for the confusion. You're right, it's better to provide the full code for clarity. Here's the complete `get_data` function with all the changes incorporated:
-
-```python
 @st.cache_data
 def get_data(universe, sector=None):
     end_date = datetime.now()
