@@ -58,7 +58,7 @@ def get_data(universe, sector, timeframe):
         sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
                    "^TWII", "000300.SS", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
         sector_names = {
-            "^GSPC": "SP500", "^NDX": "Nasdaq 100", "^RUT": "US Small Cap", "^HSI": "Hang Seng",
+            "^GSPC": "標普500", "^NDX": "納指100", "^RUT": "羅素2000", "^HSI": "Hang Seng",
             "3032.HK": "HS Tech", "^STOXX50E": "Europe", "^BSESN": "India", "^KS11": "Korea",
             "^TWII": "Taiwan", "000300.SS": "China 300", "^N225": "Japan", "HYG": "High Yield Bond",
             "AGG": "IG Corporate Bond", "EEM": "Emerging Mkt Equity", "GDX": "Gold", "XLE": "Energy",
