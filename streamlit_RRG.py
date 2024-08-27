@@ -160,7 +160,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 chart_label = sector.replace('.HK', '')  # Remove .HK suffix
             else:
                 legend_label = f"{sector} ({sector_names[sector]})"
-                chart_label = f"({sector_names[sector]})"
+                chart_label = f"{sector_names[sector]}"
             
             fig.add_trace(go.Scatter(
                 x=x_values, y=y_values, mode='lines+markers', name=legend_label,
@@ -201,12 +201,13 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 
     # Adjust quadrant label positions to corners
     label_font = dict(size=32, color='black', family='Arial Black')
-    fig.add_annotation(x=min_x, y=min_y, text="Lagging", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
-    fig.add_annotation(x=max_x, y=min_y, text="Weakening", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
-    fig.add_annotation(x=min_x, y=max_y, text="Improving", showarrow=False, font=label_font, xanchor="left", yanchor="top")
-    fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=label_font, xanchor="right", yanchor="top")
+    fig.add_annotation(x=min_x, y=min_y, text="落後", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
+    fig.add_annotation(x=max_x, y=min_y, text="轉弱", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
+    fig.add_annotation(x=min_x, y=max_y, text="改善", showarrow=False, font=label_font, xanchor="left", yanchor="top")
+    fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
+    
 st.title("Relative Rotation Graph (RRG) Chart by JC")
 
 st.sidebar.header("Chart Settings")
