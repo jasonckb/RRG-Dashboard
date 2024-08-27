@@ -1,3 +1,109 @@
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+
+st.set_page_config(layout="wide")
+
+@st.cache_data
+def ma(data, period):
+    return data.rolling(window=period).mean()
+
+@st.cache_data
+def calculate_rrg_values(data, benchmark):
+    sbr = data / benchmark
+    rs1 = ma(sbr, 10)
+    rs2 = ma(sbr, 26)
+    rs = 100 * ((rs1 - rs2) / rs2 + 1)
+    rm1 = ma(rs, 1)
+    rm2 = ma(rs, 4)
+    rm = 100 * ((rm1 - rm2) / rm2 + 1)
+    return rs, rm
+
+@st.cache_data
+def get_data(universe, sector, timeframe):
+    end_date = datetime.now()
+    if timeframe == "Weekly":
+        start_date = end_date - timedelta(weeks=100)
+    else:  # Daily
+        start_date = end_date - timedelta(days=500)
+
+    sector_universes = {
+        "US": {
+            "XLK": ["AAPL", "MSFT", "NVDA", "AVGO", "ADBE", "MU", "CRM", "ASML", "SNPS", "IBM", "INTC", "TXN", "NOW", "QCOM", "AMD", "AMAT", "NOW", "PANW", "CDNS", "TSMC"],
+            "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "TJX", "BKNG", "MAR", "F", "GM", "ORLY", "DHI", "CMG", "TJX", "YUM", "LEN", "ULTA", "CCL", "EXPE"],
+            "XLV": ["UNH", "JNJ", "LLY", "PFE", "ABT", "TMO", "MRK", "ABBV", "DHR", "BMY", "AMGN", "CVS", "ISRG", "MDT", "GILD", "VRTX", "CI", "ZTS", "RGEN", "BSX", "HCA"],
+            "XLF": ["BRK.B", "JPM", "BAC", "WFC", "GS", "MS", "SPGI", "BLK", "C", "AXP", "CB", "MMC", "PGR", "PNC", "TFC", "V", "MA", "PYPL", "AON", "CME", "ICE", "COF"],
+            "XLC": ["META", "GOOGL", "GOOG", "NFLX", "CMCSA", "DIS", "VZ", "T", "TMUS", "ATVI", "EA", "TTWO", "MTCH", "CHTR", "DISH", "FOXA", "TTWO", "FOX", "NWS", "WBD"],
+            "XLI": ["UNP", "HON", "UPS", "BA", "CAT", "GE", "MMM", "RTX", "LMT", "FDX", "DE", "ETN", "EMR", "NSC", "CSX", "ADP", "GD", "NOC", "FDX", "JCI", "CARR", "ITW"],
+            "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "KMI", "WMB", "HES", "HAL", "DVN", "BKR", "CTRA", "EQT", "APA", "MRO", "TRGP", "FANG"],
+            "XLB": ["LIN", "APD", "SHW", "FCX", "ECL", "NEM", "DOW", "DD", "CTVA", "PPG", "NUE", "VMC", "ALB", "FMC", "CE", "MLM", "IFF", "STLD", "CF", "FMC"],
+            "XLP": ["PG", "KO", "PEP", "COST", "WMT", "PM", "MO", "EL", "CL", "GIS", "KMB", "SYY", "KHC", "STZ", "HSY", "TGT", "ADM", "MNST", "DG", "DLTR", "WBA", "SJM"],
+            "XLU": ["NEE", "DUK", "SO", "D", "AEP", "SRE", "EXC", "XEL", "PCG", "WEC", "ES", "ED", "DTE", "AEE", "ETR", "CEG", "PCG", "EIX", "FFE", "CMS", "CNP", "PPL"],
+            "XLRE": ["PLD", "AMT", "CCI", "EQIX", "PSA", "O", "WELL", "SPG", "SBAC", "AVB", "EQR", "DLR", "VTR", "ARE", "CBRE", "WY", "EXR", "MAA", "IRM", "ESS", "HST"]
+        },
+        "HK": {
+            "^HSNU": ["0002.HK", "0003.HK", "0006.HK", "0836.HK", "1038.HK", "2688.HK",],
+            "^HSNF": ["0005.HK", "0011.HK", "0388.HK", "0939.HK", "1398.HK", "2318.HK", "2388.HK", "2628.HK","3968.HK","3988.HK","1299.HK"],
+            "^HSNP": ["0012.HK", "0016.HK", "0017.HK", "0101.HK", "0823.HK", "0688.HK", "1109.HK", "1997.HK", "1209.HK", "0960.HK","1113.HK"],
+            "^HSNC": ["0700.HK", "0857.HK", "0883.HK", "0941.HK", "0001.HK","0175.HK","0241.HK","0267.HK","0285.HK","0027.HK",
+                      "0288.HK","0291.HK","0316.HK","0332.HK", "0386.HK", "0669.HK", "0762.HK", "0968.HK", "0981.HK", "0386.HK"]
+        }
+    }
+
+    if universe == "WORLD":
+        benchmark = "ACWI"
+        sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
+                   "^TWII", "000300.SS", "^N225", "HYG", "AGG", "EEM", "GDX", "XLE", "XME", "AAXJ","IBB","DBA"]
+        sector_names = {
+            "^GSPC": "標普500", "^NDX": "納指100", "^RUT": "羅素2000", "^HSI": "恆指",
+            "3032.HK": "恒生科技", "^STOXX50E": "歐洲", "^BSESN": "印度", "^KS11": "韓國",
+            "^TWII": "台灣", "000300.SS": "滬深300", "^N225": "日本", "HYG": "高收益債券",
+            "AGG": "投資級別債券", "EEM": "新興市場", "GDX": "金礦", "XLE": "能源",
+            "XME": "礦業", "AAXJ": "亞太日本除外", "IBB": "生物科技","DBA":"農業"
+        }
+    elif universe == "US":
+        benchmark = "^GSPC"
+        sectors = list(sector_universes["US"].keys())
+        sector_names = {
+            "XLK": "科技", "XLY": "非必須消費", "XLV": "健康護理",
+            "XLF": "金融", "XLC": "通訊", "XLI": "工業", "XLE": "能源",
+            "XLB": "物料", "XLP": "必須消費", "XLU": "公用", "XLRE": "房地產"
+        }
+    elif universe == "US Sectors":
+        if sector:
+            benchmark = sector
+            sectors = sector_universes["US"][sector]
+            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+        else:
+            st.error("Please select a US sector.")
+            return None, None, None, None
+    elif universe == "HK":
+        benchmark = "^HSI"
+        sectors = list(sector_universes["HK"].keys())
+        sector_names = {"^HSNU": "公用", "^HSNF": "金融", "^HSNP": "地產", "^HSNC": "工商"}
+    elif universe == "HK Sub-indexes":
+        if sector:
+            benchmark = sector
+            sectors = sector_universes["HK"][sector]
+            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+        else:
+            st.error("Please select a HK sub-index.")
+            return None, None, None, None
+
+    try:
+        data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
+        if data.empty:
+            st.error(f"No data available for the selected universe and sector.")
+            return None, benchmark, sectors, sector_names
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return None, benchmark, sectors, sector_names
+
+    return data, benchmark, sectors, sector_names
+
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
@@ -56,25 +162,10 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 legend_label = f"{sector} ({sector_names[sector]})"
                 chart_label = f"{sector_names[sector]}"
             
-            # Prepare hover data
-            hover_text = [
-                f"Ticker: {sector}<br>" +
-                f"Name: {sector_names[sector]}<br>" +
-                f"Date: {data_resampled.index[i].strftime('%Y-%m-%d')}<br>" +
-                f"RS-Ratio: {x:.2f}<br>" +
-                f"RS-Momentum: {y:.2f}<br>" +
-                f"Close Price: ${data_resampled[sector].iloc[i]:.2f}<br>" +
-                f"Quadrant: {get_quadrant(x, y)}"
-                for i, (x, y) in enumerate(zip(x_values, y_values))
-            ]
-
             fig.add_trace(go.Scatter(
                 x=x_values, y=y_values, mode='lines+markers', name=legend_label,
                 line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
-                legendgroup=sector, showlegend=True,
-                hoverinfo='text',
-                hovertext=hover_text,
-                hoverlabel=dict(bgcolor="white", font_size=12, font_family="Rockwell")
+                legendgroup=sector, showlegend=True
             ))
             
             # Determine if current momentum is higher or lower than previous
@@ -85,10 +176,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
                 name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
                 text=[chart_label], textposition=text_position, legendgroup=sector, showlegend=False,
-                textfont=dict(color='black', size=12, family='Arial Black'),
-                hoverinfo='text',
-                hovertext=hover_text[-1],
-                hoverlabel=dict(bgcolor="white", font_size=12, font_family="Rockwell")
+                textfont=dict(color='black', size=12, family='Arial Black')
             ))
 
     fig.update_layout(
@@ -101,7 +189,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         yaxis=dict(range=[min_y, max_y], title_font=dict(size=14)),
         plot_bgcolor='white',
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
-        hovermode='closest',
         shapes=[
             dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor="lightblue", opacity=0.5, line_width=0),
             dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor="lightgreen", opacity=0.5, line_width=0),
@@ -120,3 +207,78 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
+    
+st.title("Relative Rotation Graph (RRG) Chart by JC")
+
+st.sidebar.header("Chart Settings")
+
+# Timeframe selection
+timeframe = st.sidebar.selectbox(
+    "Select Timeframe",
+    options=["Weekly", "Daily"],
+    key="timeframe_selector"
+)
+
+st.sidebar.header("Universe Selection")
+
+universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes"]
+universe_names = {"WORLD": "World", "US": "US", "US Sectors": "US Sectors", "HK": "Hong Kong", "HK Sub-indexes": "HK Sub-indexes"}
+
+selected_universe = st.sidebar.selectbox(
+    "Select Universe",
+    options=universe_options,
+    format_func=lambda x: universe_names[x],
+    key="universe_selector"
+)
+
+sector = None
+
+if selected_universe == "WORLD":
+    # No additional selection needed for WORLD
+    pass
+elif selected_universe == "US":
+    # No additional selection needed for US main sectors
+    pass
+elif selected_universe == "US Sectors":
+    us_sectors = ["XLK", "XLY", "XLV", "XLF", "XLC", "XLI", "XLE", "XLB", "XLP", "XLU", "XLRE"]
+    us_sector_names = {
+        "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
+        "XLF": "Financials", "XLC": "Communications", "XLI": "Industrials", "XLE": "Energy",
+        "XLB": "Materials", "XLP": "Consumer Staples", "XLU": "Utilities", "XLRE": "Real Estate"
+    }
+    st.sidebar.subheader("US Sectors")
+    selected_us_sector = st.sidebar.selectbox(
+        "Select US Sector",
+        options=us_sectors,
+        format_func=lambda x: us_sector_names[x],
+        key="us_sector_selector"
+    )
+    if selected_us_sector:
+        sector = selected_us_sector
+elif selected_universe == "HK":
+    # No additional selection needed for HK main sectors
+    pass
+elif selected_universe == "HK Sub-indexes":
+    hk_sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
+    hk_sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
+    st.sidebar.subheader("Hang Seng Sub-indexes")
+    selected_hk_sector = st.sidebar.selectbox(
+        "Select HK Sub-index",
+        options=hk_sectors,
+        format_func=lambda x: hk_sector_names[x],
+        key="hk_sector_selector"
+    )
+    if selected_hk_sector:
+        sector = selected_hk_sector
+
+if selected_universe:
+    data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe)
+    if data is not None and not data.empty:
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe)
+        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Latest Data")
+        st.dataframe(data.tail())
+    else:
+        st.error("No data available for the selected universe and sector. Please try a different selection.")
+else:
+    st.write("Please select a universe from the sidebar.")
