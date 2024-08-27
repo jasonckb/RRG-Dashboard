@@ -157,7 +157,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 chart_label = sector
             else:
                 legend_label = f"{sector} ({sector_names[sector]})"
-                chart_label = f"({sector_names[sector]})"
+                chart_label = f"{sector_names[sector]}"
             
             fig.add_trace(go.Scatter(
                 x=x_values, y=y_values, mode='lines+markers', name=legend_label,
