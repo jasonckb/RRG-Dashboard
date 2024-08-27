@@ -157,13 +157,16 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 legendgroup=sector, showlegend=True
             ))
             
+            # Determine if current momentum is higher or lower than previous
+            momentum_change = y_values.iloc[-1] - y_values.iloc[-2] if len(y_values) > 1 else 0
+            text_position = "top center" if momentum_change >= 0 else "bottom center"
+            
             fig.add_trace(go.Scatter(
                 x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
                 name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
-                text=[sector], textposition="top center", legendgroup=sector, showlegend=False,
+                text=[sector], textposition=text_position, legendgroup=sector, showlegend=False,
                 textfont=dict(color='black', size=12, family='Arial Black')
             ))
-
 
     fig.update_layout(
         title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} ({timeframe})",
@@ -193,6 +196,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="Leading", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
+
 
 st.title("Relative Rotation Graph (RRG) Chart by JC")
 
