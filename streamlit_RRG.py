@@ -111,11 +111,11 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             return None, None, None, None
     elif universe == "FX":
         benchmark = "HKDUSD=X"
-        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X", "CHFUSD=X", "JPYUSD=X",  "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X", "DX-Y.NYB"]
+        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X", "CHFUSD=X", "JPYUSD=X", "CNHUSD=X",  "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X", "DX-Y.NYB"]
         sector_names = {
             "GBPUSD=X": "GBP", "EURUSD=X": "EUR", "AUDUSD=X": "AUD", "NZDUSD=X": "NZD",
             "CADUSD=X": "CAD",  "JPYUSD=X": "JPY", "EURGBP=X": "EURGBP", "AUDNZD=X": "AUDNZD",
-            "AUDCAD=X": "AUDCAD", "NZDCAD=X": "NZDCAD", "DX-Y.NYB":"DXY", "CHFUSD=X":"CHF"
+            "AUDCAD=X": "AUDCAD", "NZDCAD=X": "NZDCAD", "DX-Y.NYB":"DXY", "CHFUSD=X":"CHF","CNHUSD=X":"CNH" 
         }
     else:
         st.error("Invalid universe selection.")
