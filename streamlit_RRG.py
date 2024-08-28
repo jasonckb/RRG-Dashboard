@@ -110,7 +110,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             st.error("Please provide at least one stock ticker and select a benchmark for your custom portfolio.")
             return None, None, None, None
     elif universe == "FX":
-        benchmark = "GC=F"
+        benchmark = "HKDUSD=X"
         sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X",  "JPYUSD=X",  "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X", "DX-Y.NYB"]
         sector_names = {
             "GBPUSD=X": "GBP", "EURUSD=X": "EUR", "AUDUSD=X": "AUD", "NZDUSD=X": "NZD",
