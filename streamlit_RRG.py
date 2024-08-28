@@ -23,7 +23,7 @@ def calculate_rrg_values(data, benchmark):
     return rs, rm
 
 @st.cache_data
-def get_data(universe, sector, timeframe):
+def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
     end_date = datetime.now()
     if timeframe == "Weekly":
         start_date = end_date - timedelta(weeks=100)
@@ -92,6 +92,10 @@ def get_data(universe, sector, timeframe):
         else:
             st.error("Please select a HK sub-index.")
             return None, None, None, None
+    elif universe == "Customised Portfolio":
+        benchmark = custom_benchmark
+        sectors = custom_tickers
+        sector_names = {s: "" for s in sectors}  # Assign empty strings as names
 
     try:
         data = yf.download([benchmark] + sectors, start=start_date, end=end_date)['Close']
@@ -152,10 +156,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             color = curve_colors[current_quadrant]
             
             # Modify the legend label and chart label based on the universe
-            if universe == "US Sectors":
-                legend_label = sector
-                chart_label = sector
-            elif universe == "HK Sub-indexes":
+            if universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio":
                 legend_label = sector
                 chart_label = sector.replace('.HK', '')  # Remove .HK suffix
             else:
@@ -180,7 +181,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             ))
 
     fig.update_layout(
-        title=f"Relative Rotation Graph (RRG) for {'S&P 500' if universe == 'US' else 'Hang Seng' if universe == 'HK' else 'World'} {'Sectors' if universe != 'WORLD' else 'Indices'} ({timeframe})",
+        title=f"Relative Rotation Graph (RRG) for {universe} ({timeframe})",
         xaxis_title="RS-Ratio",
         yaxis_title="RS-Momentum",
         width=1200,
@@ -188,7 +189,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         xaxis=dict(range=[min_x, max_x], title_font=dict(size=14)),
         yaxis=dict(range=[min_y, max_y], title_font=dict(size=14)),
         plot_bgcolor='white',
-        legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {'ACWI (MSCI World)' if universe == 'WORLD' else benchmark}"),
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02, title=f"Legend<br>Benchmark: {benchmark}"),
         shapes=[
             dict(type="rect", xref="x", yref="y", x0=min_x, y0=100, x1=100, y1=max_y, fillcolor="lightblue", opacity=0.5, line_width=0),
             dict(type="rect", xref="x", yref="y", x0=100, y0=100, x1=max_x, y1=max_y, fillcolor="lightgreen", opacity=0.5, line_width=0),
@@ -221,8 +222,8 @@ timeframe = st.sidebar.selectbox(
 
 st.sidebar.header("Universe Selection")
 
-universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes"]
-universe_names = {"WORLD": "World", "US": "US", "US Sectors": "US Sectors", "HK": "Hong Kong", "HK Sub-indexes": "HK Sub-indexes"}
+universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes", "Customised Portfolio"]
+universe_names = {"WORLD": "World", "US": "US", "US Sectors": "US Sectors", "HK": "Hong Kong", "HK Sub-indexes": "HK Sub-indexes", "Customised Portfolio": "Customised Portfolio"}
 
 selected_universe = st.sidebar.selectbox(
     "Select Universe",
@@ -232,6 +233,8 @@ selected_universe = st.sidebar.selectbox(
 )
 
 sector = None
+custom_tickers = None
+custom_benchmark = None
 
 if selected_universe == "WORLD":
     # No additional selection needed for WORLD
@@ -270,9 +273,34 @@ elif selected_universe == "HK Sub-indexes":
     )
     if selected_hk_sector:
         sector = selected_hk_sector
+elif selected_universe == "Customised Portfolio":
+    st.sidebar.subheader("Customised Portfolio")
+    
+    # Create 3 columns for input boxes
+    col1, col2, col3 = st.sidebar.columns(3)
+    
+    # Create 15 input boxes for stock tickers
+    custom_tickers = []
+    for i in range(15):
+        if i % 3 == 0:
+            ticker = col1.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+        elif i % 3 == 1:
+            ticker = col2.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+        else:
+            ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+        
+        if ticker:
+            custom_tickers.append(ticker)
+    
+    # Dropdown for benchmark selection
+    custom_benchmark = st.sidebar.selectbox(
+        "Select Benchmark",
+        options=["ACWI", "^GSPC", "^HSI"],
+        key="custom_benchmark_selector"
+    )
 
 if selected_universe:
-    data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe)
+    data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
         fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe)
         st.plotly_chart(fig, use_container_width=True)
