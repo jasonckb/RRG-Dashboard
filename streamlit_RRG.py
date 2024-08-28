@@ -111,10 +111,10 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             return None, None, None, None
     elif universe == "FX":
         benchmark = "GC=F"
-        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X", "CHFUSD=X", "JPYUSD=X", "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X"]
+        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X",  "JPYUSD=X", "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X"]
         sector_names = {
             "GBPUSD=X": "GBP", "EURUSD=X": "EUR", "AUDUSD=X": "AUD", "NZDUSD=X": "NZD",
-            "CADUSD=X": "CAD", "CHFUSD=X": "CHF", "JPYUSD=X": "JPY", 
+            "CADUSD=X": "CAD",  "JPYUSD=X": "JPY", 
             "EURGBP=X": "EURGBP", "AUDNZD=X": "AUDNZD", "AUDCAD=X": "AUDCAD", "NZDCAD=X": "NZDCAD"
         }
     else:
