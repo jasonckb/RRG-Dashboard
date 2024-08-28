@@ -226,10 +226,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
-
-    except Exception as e:
-        print(f"Error in create_rrg_chart: {str(e)}")
-        return None
     
 st.title("Relative Rotation Graph (RRG) Chart by JC")
 
