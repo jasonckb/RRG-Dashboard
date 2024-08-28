@@ -23,6 +23,11 @@ def calculate_rrg_values(data, benchmark):
     return rs, rm
 
 @st.cache_data
+import yfinance as yf
+import pandas as pd
+import streamlit as st
+from datetime import datetime, timedelta
+
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
     end_date = datetime.now()
     if timeframe == "Weekly":
@@ -111,9 +116,24 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
             st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
-            # Instead of removing, we'll keep the tickers but fill with NaN
-            for missing_ticker in missing_tickers:
-                data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
+            
+            if universe == "US":
+                # Try to download individual stocks for missing sectors
+                for missing_sector in missing_tickers - {benchmark}:
+                    individual_stocks = sector_universes["US"][missing_sector][:5]  # Get first 5 stocks of the sector
+                    st.info(f"Attempting to download individual stocks for {missing_sector}: {', '.join(individual_stocks)}")
+                    
+                    individual_data = yf.download(individual_stocks, start=start_date, end=end_date)['Close']
+                    if not individual_data.empty:
+                        # Calculate the average of available stocks as a proxy for the sector
+                        data[missing_sector] = individual_data.mean(axis=1)
+                        st.success(f"Created proxy for {missing_sector} using individual stocks")
+                    else:
+                        st.error(f"Could not create proxy for {missing_sector}")
+            else:
+                # For other universes, keep the tickers but fill with NaN
+                for missing_ticker in missing_tickers:
+                    data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
 
         if data.empty:
             st.error(f"No data available for the selected universe and sector.")
@@ -142,6 +162,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
+
 
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
