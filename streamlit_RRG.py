@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
-
+import time
 
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
@@ -15,6 +15,21 @@ st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by J
 def reset_custom_tickers():
     st.session_state.reset_tickers = True
     raise RerunException(RerunData(widget_states=None))
+
+@st.cache_data
+def ma(data, period):
+    return data.rolling(window=period).mean()
+
+@st.cache_data
+def calculate_rrg_values(data, benchmark):
+    sbr = data / benchmark
+    rs1 = ma(sbr, 10)
+    rs2 = ma(sbr, 26)
+    rs = 100 * ((rs1 - rs2) / rs2 + 1)
+    rm1 = ma(rs, 1)
+    rm2 = ma(rs, 4)
+    rm = 100 * ((rm1 - rm2) / rm2 + 1)
+    return rs, rm
 
 @st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
@@ -178,23 +193,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
-        
-        valid_sectors = [s for s in sectors if s in data.columns]
-        if len(valid_sectors) == 0:
-            st.error("No valid sector data available. Please check your input and try again.")
-            return None, benchmark, sectors, sector_names
-        
-        sectors = valid_sectors
-        sector_names = {s: sector_names[s] for s in valid_sectors if s in sector_names}
-        
-    except Exception as e:
-        st.error(f"Error fetching data: {str(e)}")
-        return None, benchmark, sectors, sector_names
 
-    st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
-    return data, benchmark, sectors, sector_names
-        
-        
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
@@ -240,7 +239,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
-            if universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio":
+            if universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio" or universe == "FX":
                 legend_label = sector
                 chart_label = sector.replace('.HK', '')
             else:
@@ -393,7 +392,6 @@ elif selected_universe == "Customised Portfolio":
     # Reset the flag after use
     if st.session_state.reset_tickers:
         st.session_state.reset_tickers = False
-    
 
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
