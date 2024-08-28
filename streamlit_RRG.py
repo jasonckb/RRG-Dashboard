@@ -21,16 +21,6 @@ def ma(data, period):
     return data.rolling(window=period).mean()
 
 @st.cache_data
-def calculate_rrg_values(data, benchmark):
-    sbr = data / benchmark
-    rs1 = ma(sbr, 10)
-    rs2 = ma(sbr, 26)
-    rs = 100 * ((rs1 - rs2) / rs2 + 1)
-    rm1 = ma(rs, 1)
-    rm2 = ma(rs, 4)
-    rm = 100 * ((rm1 - rm2) / rm2 + 1)
-    return rs, rm
-
 @st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
     end_date = datetime.now()
@@ -109,6 +99,17 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         else:
             st.error("Please provide at least one stock ticker and select a benchmark for your custom portfolio.")
             return None, None, None, None
+    elif universe == "FX":
+        benchmark = "GC=F"
+        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X", "CHFUSD=X", "JPYUSD=X", "CNHUSD=X", "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X"]
+        sector_names = {
+            "GBPUSD=X": "GBP", "EURUSD=X": "EUR", "AUDUSD=X": "AUD", "NZDUSD=X": "NZD",
+            "CADUSD=X": "CAD", "CHFUSD=X": "CHF", "JPYUSD=X": "JPY", "CNHUSD=X": "CNH",
+            "EURGBP=X": "EURGBP", "AUDNZD=X": "AUDNZD", "AUDCAD=X": "AUDCAD", "NZDCAD=X": "NZDCAD"
+        }
+    else:
+        st.error("Invalid universe selection.")
+        return None, None, None, None
 
     try:
         tickers_to_download = [benchmark] + sectors
@@ -274,8 +275,16 @@ timeframe = st.sidebar.selectbox(
 
 st.sidebar.header("Universe Selection")
 
-universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes", "Customised Portfolio"]
-universe_names = {"WORLD": "World", "US": "US", "US Sectors": "US Sectors", "HK": "Hong Kong", "HK Sub-indexes": "HK Sub-indexes", "Customised Portfolio": "Customised Portfolio"}
+universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes", "Customised Portfolio", "FX"]
+universe_names = {
+    "WORLD": "World", 
+    "US": "US", 
+    "US Sectors": "US Sectors", 
+    "HK": "Hong Kong", 
+    "HK Sub-indexes": "HK Sub-indexes", 
+    "Customised Portfolio": "Customised Portfolio",
+    "FX": "Foreign Exchange"
+}
 
 selected_universe = st.sidebar.selectbox(
     "Select Universe",
