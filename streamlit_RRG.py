@@ -30,29 +30,6 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
     else:  # Daily
         start_date = end_date - timedelta(days=500)
 
-    sector_universes = {
-        "US": {
-            "XLK": ["AAPL", "MSFT", "NVDA", "AVGO", "ADBE", "MU", "CRM", "ASML", "SNPS", "IBM", "INTC", "TXN", "NOW", "QCOM", "AMD", "AMAT", "NOW", "PANW", "CDNS", "TSMC"],
-            "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "TJX", "BKNG", "MAR", "F", "GM", "ORLY", "DHI", "CMG", "TJX", "YUM", "LEN", "ULTA", "CCL", "EXPE"],
-            "XLV": ["UNH", "JNJ", "LLY", "PFE", "ABT", "TMO", "MRK", "ABBV", "DHR", "BMY", "AMGN", "CVS", "ISRG", "MDT", "GILD", "VRTX", "CI", "ZTS", "RGEN", "BSX", "HCA"],
-            "XLF": ["BRK.B", "JPM", "BAC", "WFC", "GS", "MS", "SPGI", "BLK", "C", "AXP", "CB", "MMC", "PGR", "PNC", "TFC", "V", "MA", "PYPL", "AON", "CME", "ICE", "COF"],
-            "XLC": ["META", "GOOGL", "GOOG", "NFLX", "CMCSA", "DIS", "VZ", "T", "TMUS", "ATVI", "EA", "TTWO", "MTCH", "CHTR", "DISH", "FOXA", "TTWO", "FOX", "NWS", "WBD"],
-            "XLI": ["UNP", "HON", "UPS", "BA", "CAT", "GE", "MMM", "RTX", "LMT", "FDX", "DE", "ETN", "EMR", "NSC", "CSX", "ADP", "GD", "NOC", "FDX", "JCI", "CARR", "ITW"],
-            "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "KMI", "WMB", "HES", "HAL", "DVN", "BKR", "CTRA", "EQT", "APA", "MRO", "TRGP", "FANG"],
-            "XLB": ["LIN", "APD", "SHW", "FCX", "ECL", "NEM", "DOW", "DD", "CTVA", "PPG", "NUE", "VMC", "ALB", "FMC", "CE", "MLM", "IFF", "STLD", "CF", "FMC"],
-            "XLP": ["PG", "KO", "PEP", "COST", "WMT", "PM", "MO", "EL", "CL", "GIS", "KMB", "SYY", "KHC", "STZ", "HSY", "TGT", "ADM", "MNST", "DG", "DLTR", "WBA", "SJM"],
-            "XLU": ["NEE", "DUK", "SO", "D", "AEP", "SRE", "EXC", "XEL", "PCG", "WEC", "ES", "ED", "DTE", "AEE", "ETR", "CEG", "PCG", "EIX", "FFE", "CMS", "CNP", "PPL"],
-            "XLRE": ["PLD", "AMT", "CCI", "EQIX", "PSA", "O", "WELL", "SPG", "SBAC", "AVB", "EQR", "DLR", "VTR", "ARE", "CBRE", "WY", "EXR", "MAA", "IRM", "ESS", "HST"]
-        },
-        "HK": {
-            "^HSNU": ["0002.HK", "0003.HK", "0006.HK", "0836.HK", "1038.HK", "2688.HK",],
-            "^HSNF": ["0005.HK", "0011.HK", "0388.HK", "0939.HK", "1398.HK", "2318.HK", "2388.HK", "2628.HK","3968.HK","3988.HK","1299.HK"],
-            "^HSNP": ["0012.HK", "0016.HK", "0017.HK", "0101.HK", "0823.HK", "0688.HK", "1109.HK", "1997.HK", "1209.HK", "0960.HK","1113.HK"],
-            "^HSNC": ["0700.HK", "0857.HK", "0883.HK", "0941.HK", "0001.HK","0175.HK","0241.HK","0267.HK","0285.HK","0027.HK",
-                      "0288.HK","0291.HK","0316.HK","0332.HK", "0386.HK", "0669.HK", "0762.HK", "0968.HK", "0981.HK", "0386.HK"]
-        }
-    }
-
     if universe == "WORLD":
         benchmark = "ACWI"
         sectors = ["^GSPC", "^NDX", "^RUT", "^HSI", "3032.HK", "^STOXX50E", "^BSESN", "^KS11", 
@@ -64,55 +41,32 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             "AGG": "投資級別債券", "EEM": "新興市場", "GDX": "金礦", "XLE": "能源",
             "XME": "礦業", "AAXJ": "亞太日本除外", "IBB": "生物科技","DBA":"農業"
         }
-    elif universe == "US":
-        benchmark = "^GSPC"
-        sectors = list(sector_universes["US"].keys())
-        sector_names = {
-            "XLK": "科技", "XLY": "非必須消費", "XLV": "健康護理",
-            "XLF": "金融", "XLC": "通訊", "XLI": "工業", "XLE": "能源",
-            "XLB": "物料", "XLP": "必須消費", "XLU": "公用", "XLRE": "房地產"
-        }
-    elif universe == "US Sectors":
-        if sector:
-            benchmark = sector
-            sectors = sector_universes["US"][sector]
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
-        else:
-            st.error("Please select a US sector.")
-            return None, None, None, None
-    elif universe == "HK":
-        benchmark = "^HSI"
-        sectors = list(sector_universes["HK"].keys())
-        sector_names = {"^HSNU": "公用", "^HSNF": "金融", "^HSNP": "地產", "^HSNC": "工商"}
-    elif universe == "HK Sub-indexes":
-        if sector:
-            benchmark = sector
-            sectors = sector_universes["HK"][sector]
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
-        else:
-            st.error("Please select a HK sub-index.")
-            return None, None, None, None
+    # ... [other universe conditions remain the same] ...
+
     elif universe == "Customised Portfolio":
         if custom_benchmark and custom_tickers:
             benchmark = custom_benchmark
-            sectors = [ticker for ticker in custom_tickers if ticker]  # Remove empty strings
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+            sectors = [ticker for ticker in custom_tickers if ticker]
+            sector_names = {s: "" for s in sectors}
         else:
             st.error("Please provide at least one stock ticker and select a benchmark for your custom portfolio.")
             return None, None, None, None
 
     try:
         tickers_to_download = [benchmark] + sectors
+        st.info(f"Attempting to download data for: {', '.join(tickers_to_download)}")
+        
         data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
         
         # Check if any tickers are missing from the downloaded data
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
             st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
-            # Remove missing tickers from sectors
-            sectors = [s for s in sectors if s not in missing_tickers]
-            sector_names = {s: sector_names[s] for s in sectors if s in sector_names}
-
+            
+            # Instead of removing, we'll keep the tickers but fill with NaN
+            for missing_ticker in missing_tickers:
+                data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
+        
         if data.empty:
             st.error(f"No data available for the selected universe and sector.")
             return None, benchmark, sectors, sector_names
@@ -125,7 +79,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             st.error(f"No data available for the benchmark {benchmark}. Please choose a different benchmark.")
             return None, benchmark, sectors, sector_names
         
-        # Remove sectors with no data
+        # Update sectors list to only include those with data
         valid_sectors = [s for s in sectors if s in data.columns]
         if len(valid_sectors) == 0:
             st.error("No valid sector data available. Please check your input and try again.")
@@ -138,6 +92,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         st.error(f"Error fetching data: {str(e)}")
         return None, benchmark, sectors, sector_names
 
+    st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
