@@ -76,7 +76,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         if sector:
             benchmark = sector
             sectors = sector_universes["US"][sector]
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+            sector_names = {s: "" for s in sectors}
         else:
             st.error("Please select a US sector.")
             return None, None, None, None
@@ -88,15 +88,15 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         if sector:
             benchmark = sector
             sectors = sector_universes["HK"][sector]
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+            sector_names = {s: "" for s in sectors}
         else:
             st.error("Please select a HK sub-index.")
             return None, None, None, None
     elif universe == "Customised Portfolio":
         if custom_benchmark and custom_tickers:
             benchmark = custom_benchmark
-            sectors = [ticker for ticker in custom_tickers if ticker]  # Remove empty strings
-            sector_names = {s: "" for s in sectors}  # Assign empty strings as names
+            sectors = [ticker for ticker in custom_tickers if ticker]
+            sector_names = {s: "" for s in sectors}
         else:
             st.error("Please provide at least one stock ticker and select a benchmark for your custom portfolio.")
             return None, None, None, None
@@ -107,12 +107,10 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         
         data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
         
-        # Check if any tickers are missing from the downloaded data
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
             st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
             
-            # Special handling for ^TWII and 3032.HK in the WORLD universe
             if universe == "WORLD":
                 if "^TWII" in missing_tickers:
                     st.info("Attempting to download alternative for ^TWII: TAIEX")
@@ -130,7 +128,6 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
                         missing_tickers.remove("3032.HK")
                         st.success("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
             
-            # For any remaining missing tickers, fill with NaN
             for missing_ticker in missing_tickers:
                 data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
 
@@ -138,15 +135,12 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             st.error(f"No data available for the selected universe and sector.")
             return None, benchmark, sectors, sector_names
         
-        # Remove columns with all NaN values
         data = data.dropna(axis=1, how='all')
         
-        # Check if benchmark data is available
         if benchmark not in data.columns:
             st.error(f"No data available for the benchmark {benchmark}. Please choose a different benchmark.")
             return None, benchmark, sectors, sector_names
         
-        # Update sectors list to only include those with data
         valid_sectors = [s for s in sectors if s in data.columns]
         if len(valid_sectors) == 0:
             st.error("No valid sector data available. Please check your input and try again.")
@@ -161,33 +155,6 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
-
-        
-        # Remove columns with all NaN values
-        data = data.dropna(axis=1, how='all')
-        
-        # Check if benchmark data is available
-        if benchmark not in data.columns:
-            st.error(f"No data available for the benchmark {benchmark}. Please choose a different benchmark.")
-            return None, benchmark, sectors, sector_names
-        
-        # Update sectors list to only include those with data
-        valid_sectors = [s for s in sectors if s in data.columns]
-        if len(valid_sectors) == 0:
-            st.error("No valid sector data available. Please check your input and try again.")
-            return None, benchmark, sectors, sector_names
-        
-        sectors = valid_sectors
-        sector_names = {s: sector_names[s] for s in valid_sectors if s in sector_names}
-        
-    except Exception as e:
-        st.error(f"Error fetching data: {str(e)}")
-        return None, benchmark, sectors, sector_names
-
-    st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
-    return data, benchmark, sectors, sector_names
-
-
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
     if timeframe == "Weekly":
@@ -196,37 +163,23 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         data_resampled = data
 
     rrg_data = pd.DataFrame()
-    valid_sectors = []
     for sector in sectors:
-        if sector in data_resampled.columns and benchmark in data_resampled.columns:
-            try:
-                rs_ratio, rs_momentum = calculate_rrg_values(data_resampled[sector], data_resampled[benchmark])
-                rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
-                rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
-                valid_sectors.append(sector)
-            except Exception as e:
-                st.warning(f"Could not calculate RRG values for {sector}: {str(e)}")
-        else:
-            st.warning(f"Data for {sector} or benchmark {benchmark} is missing. Skipping this sector.")
+        rs_ratio, rs_momentum = calculate_rrg_values(data_resampled[sector], data_resampled[benchmark])
+        rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
+        rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    if not valid_sectors:
-        st.error("No valid data available to create the RRG chart.")
-        return None
-
-    # Use only the last 5 data points (current + 4 historical)
     last_n_periods = rrg_data.iloc[-5:]
 
-    # Calculate the min and max values with padding
-    padding = 0.05  # 5% padding
-    min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in valid_sectors]].min().min()
-    max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in valid_sectors]].max().max()
-    min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in valid_sectors]].min().min()
-    max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in valid_sectors]].max().max()
+    padding = 0.05
+    min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
     range_x = max_x - min_x
     range_y = max_y - min_y
-    min_x = max(min_x - range_x * padding, 90)  # Ensure minimum is not less than 90
-    max_x = min(max_x + range_x * padding, 110)  # Ensure maximum is not more than 110
+    min_x = max(min_x - range_x * padding, 90)
+    max_x = min(max_x + range_x * padding, 110)
     min_y = max(min_y - range_y * padding, 90)
     max_y = min(max_y + range_y * padding, 110)
 
@@ -241,17 +194,16 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         elif x < 100 and y >= 100: return "Improving"
         else: return "Leading"
 
-    for sector in valid_sectors:
+    for sector in sectors:
         x_values = last_n_periods[f"{sector}_RS-Ratio"].dropna()
         y_values = last_n_periods[f"{sector}_RS-Momentum"].dropna()
         if len(x_values) > 0 and len(y_values) > 0:
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
-            # Modify the legend label and chart label based on the universe
             if universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio":
                 legend_label = sector
-                chart_label = sector.replace('.HK', '')  # Remove .HK suffix
+                chart_label = sector.replace('.HK', '')
             else:
                 legend_label = f"{sector} ({sector_names.get(sector, '')})"
                 chart_label = f"{sector_names.get(sector, sector)}"
@@ -262,7 +214,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 legendgroup=sector, showlegend=True
             ))
             
-            # Determine if current momentum is higher or lower than previous
             momentum_change = y_values.iloc[-1] - y_values.iloc[-2] if len(y_values) > 1 else 0
             text_position = "top center" if momentum_change >= 0 else "bottom center"
             
@@ -293,7 +244,6 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         ]
     )
 
-    # Adjust quadrant label positions to corners
     label_font = dict(size=32, color='black', family='Arial Black')
     fig.add_annotation(x=min_x, y=min_y, text="落後", showarrow=False, font=label_font, xanchor="left", yanchor="bottom")
     fig.add_annotation(x=max_x, y=min_y, text="轉弱", showarrow=False, font=label_font, xanchor="right", yanchor="bottom")
@@ -307,7 +257,6 @@ st.title("Relative Rotation Graph (RRG) Chart by JC")
 
 st.sidebar.header("Chart Settings")
 
-# Timeframe selection
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
     options=["Weekly", "Daily"],
@@ -330,13 +279,7 @@ sector = None
 custom_tickers = None
 custom_benchmark = None
 
-if selected_universe == "WORLD":
-    # No additional selection needed for WORLD
-    pass
-elif selected_universe == "US":
-    # No additional selection needed for US main sectors
-    pass
-elif selected_universe == "US Sectors":
+if selected_universe == "US Sectors":
     us_sectors = ["XLK", "XLY", "XLV", "XLF", "XLC", "XLI", "XLE", "XLB", "XLP", "XLU", "XLRE"]
     us_sector_names = {
         "XLK": "Technology", "XLY": "Consumer Discretionary", "XLV": "Health Care",
@@ -352,9 +295,6 @@ elif selected_universe == "US Sectors":
     )
     if selected_us_sector:
         sector = selected_us_sector
-elif selected_universe == "HK":
-    # No additional selection needed for HK main sectors
-    pass
 elif selected_universe == "HK Sub-indexes":
     hk_sectors = ["^HSNU", "^HSNF", "^HSNP", "^HSNC"]
     hk_sector_names = {"^HSNU": "Utilities", "^HSNF": "Financials", "^HSNP": "Properties", "^HSNC": "Commerce & Industry"}
@@ -370,10 +310,8 @@ elif selected_universe == "HK Sub-indexes":
 elif selected_universe == "Customised Portfolio":
     st.sidebar.subheader("Customised Portfolio")
     
-    # Create 3 columns for input boxes
     col1, col2, col3 = st.sidebar.columns(3)
     
-    # Create 15 input boxes for stock tickers
     custom_tickers = []
     for i in range(15):
         if i % 3 == 0:
@@ -384,51 +322,32 @@ elif selected_universe == "Customised Portfolio":
             ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
         
         if ticker:
-            # Process the ticker input
-            ticker = ticker.strip()  # Remove leading/trailing whitespace
             if ticker.isalpha():
-                # Convert alphabetic input to uppercase
                 processed_ticker = ticker.upper()
             elif ticker.isdigit():
-                # For any numeric input, treat as Hong Kong stock
                 processed_ticker = f"{ticker.zfill(4)}.HK"
-            elif ticker.endswith('.HK'):
-                # If already in correct HK format, ensure 4 digits
-                numeric_part = ticker[:-3]
-                if numeric_part.isdigit():
-                    processed_ticker = f"{numeric_part.zfill(4)}.HK"
-                else:
-                    processed_ticker = ticker  # Keep as is if not purely numeric
             else:
-                # For any other input, just use as is
                 processed_ticker = ticker
-            
             custom_tickers.append(processed_ticker)
     
-    # Dropdown for benchmark selection
     custom_benchmark = st.sidebar.selectbox(
         "Select Benchmark",
         options=["ACWI", "^GSPC", "^HSI"],
         key="custom_benchmark_selector"
     )
 
-# Main app logic
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
         fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe)
-        if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
-            st.subheader("Latest Data")
-            st.dataframe(data.tail())
-        else:
-            st.error("Failed to create the RRG chart. Please check your input data and try again.")
+        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Latest Data")
+        st.dataframe(data.tail())
     else:
         st.error("No data available for the selected universe and sector. Please try a different selection.")
 else:
     st.write("Please select a universe from the sidebar.")
 
-# Add this at the end of your script to help with debugging
 if st.checkbox("Show raw data"):
     st.write("Raw data:")
     st.write(data)
@@ -436,4 +355,3 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
-
