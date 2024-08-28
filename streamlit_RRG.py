@@ -112,27 +112,56 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         if missing_tickers:
             st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
             
-            if universe == "US":
-                # Try to download individual stocks for missing sectors
-                for missing_sector in missing_tickers - {benchmark}:
-                    individual_stocks = sector_universes["US"][missing_sector][:5]  # Get first 5 stocks of the sector
-                    st.info(f"Attempting to download individual stocks for {missing_sector}: {', '.join(individual_stocks)}")
-                    
-                    individual_data = yf.download(individual_stocks, start=start_date, end=end_date)['Close']
-                    if not individual_data.empty:
-                        # Calculate the average of available stocks as a proxy for the sector
-                        data[missing_sector] = individual_data.mean(axis=1)
-                        st.success(f"Created proxy for {missing_sector} using individual stocks")
-                    else:
-                        st.error(f"Could not create proxy for {missing_sector}")
-            else:
-                # For other universes, keep the tickers but fill with NaN
-                for missing_ticker in missing_tickers:
-                    data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
+            # Special handling for ^TWII and 3032.HK in the WORLD universe
+            if universe == "WORLD":
+                if "^TWII" in missing_tickers:
+                    st.info("Attempting to download alternative for ^TWII: TAIEX")
+                    twii_data = yf.download("TAIEX", start=start_date, end=end_date)['Close']
+                    if not twii_data.empty:
+                        data["^TWII"] = twii_data
+                        missing_tickers.remove("^TWII")
+                        st.success("Successfully downloaded TAIEX as a proxy for ^TWII")
+                
+                if "3032.HK" in missing_tickers:
+                    st.info("Attempting to download alternative for 3032.HK: ^HSTECH")
+                    hstech_data = yf.download("^HSTECH", start=start_date, end=end_date)['Close']
+                    if not hstech_data.empty:
+                        data["3032.HK"] = hstech_data
+                        missing_tickers.remove("3032.HK")
+                        st.success("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
+            
+            # For any remaining missing tickers, fill with NaN
+            for missing_ticker in missing_tickers:
+                data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
 
         if data.empty:
             st.error(f"No data available for the selected universe and sector.")
             return None, benchmark, sectors, sector_names
+        
+        # Remove columns with all NaN values
+        data = data.dropna(axis=1, how='all')
+        
+        # Check if benchmark data is available
+        if benchmark not in data.columns:
+            st.error(f"No data available for the benchmark {benchmark}. Please choose a different benchmark.")
+            return None, benchmark, sectors, sector_names
+        
+        # Update sectors list to only include those with data
+        valid_sectors = [s for s in sectors if s in data.columns]
+        if len(valid_sectors) == 0:
+            st.error("No valid sector data available. Please check your input and try again.")
+            return None, benchmark, sectors, sector_names
+        
+        sectors = valid_sectors
+        sector_names = {s: sector_names[s] for s in valid_sectors if s in sector_names}
+        
+    except Exception as e:
+        st.error(f"Error fetching data: {str(e)}")
+        return None, benchmark, sectors, sector_names
+
+    st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
+    return data, benchmark, sectors, sector_names
+
         
         # Remove columns with all NaN values
         data = data.dropna(axis=1, how='all')
