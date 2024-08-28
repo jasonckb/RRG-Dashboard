@@ -336,14 +336,22 @@ elif selected_universe == "Customised Portfolio":
         
         if ticker:
             # Process the ticker input
+            ticker = ticker.strip()  # Remove leading/trailing whitespace
             if ticker.isalpha():
                 # Convert alphabetic input to uppercase
                 processed_ticker = ticker.upper()
-            elif ticker.isdigit() and len(ticker) == 4:
-                # Add .HK to 4-digit numeric input
-                processed_ticker = f"{ticker}.HK"
+            elif ticker.isdigit():
+                # For any numeric input, treat as Hong Kong stock
+                processed_ticker = f"{ticker.zfill(4)}.HK"
+            elif ticker.endswith('.HK'):
+                # If already in correct HK format, ensure 4 digits
+                numeric_part = ticker[:-3]
+                if numeric_part.isdigit():
+                    processed_ticker = f"{numeric_part.zfill(4)}.HK"
+                else:
+                    processed_ticker = ticker  # Keep as is if not purely numeric
             else:
-                # For any other input, just use as is (this includes inputs already in correct format)
+                # For any other input, just use as is
                 processed_ticker = ticker
             
             custom_tickers.append(processed_ticker)
