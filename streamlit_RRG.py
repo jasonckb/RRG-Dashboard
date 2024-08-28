@@ -23,11 +23,6 @@ def calculate_rrg_values(data, benchmark):
     return rs, rm
 
 @st.cache_data
-import yfinance as yf
-import pandas as pd
-import streamlit as st
-from datetime import datetime, timedelta
-
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
     end_date = datetime.now()
     if timeframe == "Weekly":
