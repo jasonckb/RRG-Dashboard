@@ -176,7 +176,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
 
-def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe):
+def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe, tail_length):
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
     else:  # Daily
@@ -188,7 +188,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    last_n_periods = rrg_data.iloc[-5:]
+    last_n_periods = rrg_data.iloc[-tail_length:]  # Use the tail_length parameter here
 
     padding = 0.1
     min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
@@ -286,6 +286,15 @@ timeframe = st.sidebar.selectbox(
     key="timeframe_selector"
 )
 
+tail_length = st.sidebar.slider(
+    "Tail Length",
+    min_value=1,
+    max_value=52,
+    value=5,
+    step=1,
+    help="Number of data points to show in the chart"
+)
+
 st.sidebar.header("Universe Selection")
 
 universe_options = ["WORLD", "US", "US Sectors", "HK", "HK Sub-indexes", "Customised Portfolio", "FX"]
@@ -381,7 +390,7 @@ elif selected_universe == "Customised Portfolio":
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
-        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe)
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe, tail_length)  # Added tail_length here
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
         st.dataframe(data.tail())
