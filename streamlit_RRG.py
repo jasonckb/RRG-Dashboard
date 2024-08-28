@@ -221,7 +221,10 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
             
-            if universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio" or universe == "FX":
+            if universe == "FX":
+                legend_label = f"{sector} ({sector_names.get(sector, '')})"
+                chart_label = sector_names.get(sector, sector)
+            elif universe == "US Sectors" or universe == "HK Sub-indexes" or universe == "Customised Portfolio":
                 legend_label = sector
                 chart_label = sector.replace('.HK', '')
             else:
