@@ -344,7 +344,7 @@ elif selected_universe == "Customised Portfolio":
     if st.sidebar.button("Reset"):
         reset_custom_tickers()
         st.experimental_rerun()
-    )
+    
 
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
