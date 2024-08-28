@@ -335,7 +335,18 @@ elif selected_universe == "Customised Portfolio":
             ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
         
         if ticker:
-            custom_tickers.append(ticker)
+            # Process the ticker input
+            if ticker.isalpha():
+                # Convert alphabetic input to uppercase
+                processed_ticker = ticker.upper()
+            elif ticker.isdigit() and len(ticker) == 4:
+                # Add .HK to 4-digit numeric input
+                processed_ticker = f"{ticker}.HK"
+            else:
+                # For any other input, just use as is (this includes inputs already in correct format)
+                processed_ticker = ticker
+            
+            custom_tickers.append(processed_ticker)
     
     # Dropdown for benchmark selection
     custom_benchmark = st.sidebar.selectbox(
