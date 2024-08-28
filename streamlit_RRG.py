@@ -4,12 +4,13 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from streamlit.runtime.scriptrunner import RerunData, RerunException
+import streamlit.components.v1 as components
 
-st.set_page_config(layout="wide")
 # Add this function at the beginning of your script, after the imports
 def reset_custom_tickers():
-    for i in range(15):
-        st.session_state[f"stock_{i+1}"] = ""
+    st.session_state.reset_tickers = True
+    raise RerunException(RerunData(widget_states=None))
 
 @st.cache_data
 def ma(data, period):
@@ -314,16 +315,19 @@ elif selected_universe == "HK Sub-indexes":
 elif selected_universe == "Customised Portfolio":
     st.sidebar.subheader("Customised Portfolio")
     
+    if 'reset_tickers' not in st.session_state:
+        st.session_state.reset_tickers = False
+
     col1, col2, col3 = st.sidebar.columns(3)
     
     custom_tickers = []
     for i in range(15):
         if i % 3 == 0:
-            ticker = col1.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+            ticker = col1.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
         elif i % 3 == 1:
-            ticker = col2.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+            ticker = col2.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
         else:
-            ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}")
+            ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
         
         if ticker:
             if ticker.isalpha():
@@ -343,7 +347,10 @@ elif selected_universe == "Customised Portfolio":
     # Add Reset button
     if st.sidebar.button("Reset"):
         reset_custom_tickers()
-        st.experimental_rerun()
+
+    # Reset the flag after use
+    if st.session_state.reset_tickers:
+        st.session_state.reset_tickers = False
     
 
 if selected_universe:
