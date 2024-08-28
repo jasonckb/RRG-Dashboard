@@ -190,7 +190,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 
     last_n_periods = rrg_data.iloc[-5:]
 
-    padding = 0.05
+    padding = 0.07
     min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
     max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
     min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
