@@ -6,6 +6,10 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
+# Add this function at the beginning of your script, after the imports
+def reset_custom_tickers():
+    for i in range(15):
+        st.session_state[f"stock_{i+1}"] = ""
 
 @st.cache_data
 def ma(data, period):
@@ -334,6 +338,12 @@ elif selected_universe == "Customised Portfolio":
         "Select Benchmark",
         options=["ACWI", "^GSPC", "^HSI"],
         key="custom_benchmark_selector"
+    )
+
+    # Add Reset button
+    if st.sidebar.button("Reset"):
+        reset_custom_tickers()
+        st.experimental_rerun()
     )
 
 if selected_universe:
