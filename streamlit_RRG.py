@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
-import time
+
 
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
@@ -44,7 +44,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             "XLK": ["AAPL", "MSFT", "NVDA", "AVGO", "ADBE", "MU", "CRM", "ASML", "SNPS", "IBM", "INTC", "TXN", "NOW", "QCOM", "AMD", "AMAT", "NOW", "PANW", "CDNS", "TSMC"],
             "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "TJX", "BKNG", "MAR", "F", "GM", "ORLY", "DHI", "CMG", "TJX", "YUM", "LEN", "ULTA", "CCL", "EXPE"],
             "XLV": ["UNH", "JNJ", "LLY", "PFE", "ABT", "TMO", "MRK", "ABBV", "DHR", "BMY", "AMGN", "CVS", "ISRG", "MDT", "GILD", "VRTX", "CI", "ZTS", "RGEN", "BSX", "HCA"],
-            "XLF": ["BRK-B", "JPM", "BAC", "WFC", "GS", "MS", "SPGI", "BLK", "C", "AXP", "CB", "MMC", "PGR", "PNC", "TFC", "V", "MA", "PYPL", "AON", "CME", "ICE", "COF"],
+            "XLF": ["BRK.B", "JPM", "BAC", "WFC", "GS", "MS", "SPGI", "BLK", "C", "AXP", "CB", "MMC", "PGR", "PNC", "TFC", "V", "MA", "PYPL", "AON", "CME", "ICE", "COF"],
             "XLC": ["META", "GOOGL", "GOOG", "NFLX", "CMCSA", "DIS", "VZ", "T", "TMUS", "ATVI", "EA", "TTWO", "MTCH", "CHTR", "DISH", "FOXA", "TTWO", "FOX", "NWS", "WBD"],
             "XLI": ["UNP", "HON", "UPS", "BA", "CAT", "GE", "MMM", "RTX", "LMT", "FDX", "DE", "ETN", "EMR", "NSC", "CSX", "ADP", "GD", "NOC", "FDX", "JCI", "CARR", "ITW"],
             "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "KMI", "WMB", "HES", "HAL", "DVN", "BKR", "CTRA", "EQT", "APA", "MRO", "TRGP", "FANG"],
@@ -111,7 +111,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             return None, None, None, None
     elif universe == "FX":
         benchmark = "GC=F"
-        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X",  "JPYUSD=X", "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X"]
+        sectors = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "NZDUSD=X", "CADUSD=X",  "JPYUSD=X",  "EURGBP=X", "AUDNZD=X", "AUDCAD=X", "NZDCAD=X"]
         sector_names = {
             "GBPUSD=X": "GBP", "EURUSD=X": "EUR", "AUDUSD=X": "AUD", "NZDUSD=X": "NZD",
             "CADUSD=X": "CAD",  "JPYUSD=X": "JPY", 
@@ -125,19 +125,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         tickers_to_download = [benchmark] + sectors
         st.info(f"Attempting to download data for: {', '.join(tickers_to_download)}")
         
-        data = pd.DataFrame()
-        for ticker in tickers_to_download:
-            try:
-                ticker_data = yf.Ticker(ticker)
-                hist = ticker_data.history(start=start_date, end=end_date)
-                if not hist.empty:
-                    data[ticker] = hist['Close']
-                    st.success(f"Successfully downloaded data for {ticker}")
-                else:
-                    st.warning(f"No data available for {ticker}")
-                time.sleep(1)  # Add a small delay to avoid overwhelming the API
-            except Exception as e:
-                st.error(f"Error downloading data for {ticker}: {str(e)}")
+        data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
         
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
@@ -146,25 +134,19 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
             if universe == "WORLD":
                 if "^TWII" in missing_tickers:
                     st.info("Attempting to download alternative for ^TWII: TAIEX")
-                    try:
-                        twii_data = yf.Ticker("TAIEX").history(start=start_date, end=end_date)['Close']
-                        if not twii_data.empty:
-                            data["^TWII"] = twii_data
-                            missing_tickers.remove("^TWII")
-                            st.success("Successfully downloaded TAIEX as a proxy for ^TWII")
-                    except Exception as e:
-                        st.error(f"Error downloading TAIEX data: {str(e)}")
+                    twii_data = yf.download("TAIEX", start=start_date, end=end_date)['Close']
+                    if not twii_data.empty:
+                        data["^TWII"] = twii_data
+                        missing_tickers.remove("^TWII")
+                        st.success("Successfully downloaded TAIEX as a proxy for ^TWII")
                 
                 if "3032.HK" in missing_tickers:
                     st.info("Attempting to download alternative for 3032.HK: ^HSTECH")
-                    try:
-                        hstech_data = yf.Ticker("^HSTECH").history(start=start_date, end=end_date)['Close']
-                        if not hstech_data.empty:
-                            data["3032.HK"] = hstech_data
-                            missing_tickers.remove("3032.HK")
-                            st.success("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
-                    except Exception as e:
-                        st.error(f"Error downloading ^HSTECH data: {str(e)}")
+                    hstech_data = yf.download("^HSTECH", start=start_date, end=end_date)['Close']
+                    if not hstech_data.empty:
+                        data["3032.HK"] = hstech_data
+                        missing_tickers.remove("3032.HK")
+                        st.success("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
             
             for missing_ticker in missing_tickers:
                 data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
