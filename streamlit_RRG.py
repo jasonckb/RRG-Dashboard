@@ -21,7 +21,6 @@ def ma(data, period):
     return data.rolling(window=period).mean()
 
 @st.cache_data
-@st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
     end_date = datetime.now()
     if timeframe == "Weekly":
