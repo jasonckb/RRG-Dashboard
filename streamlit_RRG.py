@@ -10,15 +10,15 @@ import streamlit.components.v1 as components
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
 
-# Add this function at the beginning of your script, after the imports
+# Function to reset custom tickers
 def reset_custom_tickers():
     st.session_state.reset_tickers = True
     raise RerunException(RerunData(widget_states=None))
 
-# Modified refresh_data function
+# Function to refresh data for the current universe
 def refresh_data():
     st.cache_data.clear()
-    st.rerun()
+    st.session_state.data_refreshed = True
 
 @st.cache_data
 def ma(data, period):
@@ -281,13 +281,18 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
 
+# Initialize session state
+if 'selected_universe' not in st.session_state:
+    st.session_state.selected_universe = "WORLD"
+if 'data_refreshed' not in st.session_state:
+    st.session_state.data_refreshed = False
+
 # Sidebar
 st.sidebar.header("Chart Settings")
 
 # Add Refresh button at the top of the sidebar
 if st.sidebar.button("Refresh Data"):
     refresh_data()
-    st.success("Data refreshed successfully!")
 
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
@@ -321,8 +326,12 @@ selected_universe = st.sidebar.selectbox(
     "Select Universe",
     options=universe_options,
     format_func=lambda x: universe_names[x],
-    key="universe_selector"
+    key="universe_selector",
+    index=universe_options.index(st.session_state.selected_universe)
 )
+
+# Update the selected universe in session state
+st.session_state.selected_universe = selected_universe
 
 sector = None
 custom_tickers = None
@@ -396,6 +405,7 @@ elif selected_universe == "Customised Portfolio":
     if st.session_state.reset_tickers:
         st.session_state.reset_tickers = False
 
+# Main content area
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
@@ -403,6 +413,10 @@ if selected_universe:
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
         st.dataframe(data.tail())
+        
+        if st.session_state.data_refreshed:
+            st.success("Data refreshed successfully!")
+            st.session_state.data_refreshed = False
     else:
         st.error("No data available for the selected universe and sector. Please try a different selection.")
 else:
@@ -415,4 +429,5 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+
  
