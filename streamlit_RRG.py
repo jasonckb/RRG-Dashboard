@@ -175,7 +175,6 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
-
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe, tail_length):
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
@@ -188,22 +187,21 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    # Calculate boundaries based on all historical data
-    all_rs_ratio = np.concatenate([rrg_data[f"{sector}_RS-Ratio"].dropna() for sector in sectors])
-    all_rs_momentum = np.concatenate([rrg_data[f"{sector}_RS-Momentum"].dropna() for sector in sectors])
-
+    # Consider last 10 data points for boundary calculation
+    boundary_data = rrg_data.iloc[-10:]
+    
     padding = 0.1
-    min_x = np.min(all_rs_ratio)
-    max_x = np.max(all_rs_ratio)
-    min_y = np.min(all_rs_momentum)
-    max_y = np.max(all_rs_momentum)
+    min_x = boundary_data[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
+    max_x = boundary_data[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
+    min_y = boundary_data[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
+    max_y = boundary_data[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
 
     range_x = max_x - min_x
     range_y = max_y - min_y
-    min_x = min_x - range_x * padding
-    max_x = max_x + range_x * padding
-    min_y = min_y - range_y * padding
-    max_y = max_y + range_y * padding
+    min_x = max(min_x - range_x * padding, 90)
+    max_x = min(max_x + range_x * padding, 110)
+    min_y = max(min_y - range_y * padding, 90)
+    max_y = min(max_y + range_y * padding, 110)
 
     fig = go.Figure()
 
@@ -217,9 +215,8 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         else: return "Leading"
 
     for sector in sectors:
-        x_values = rrg_data[f"{sector}_RS-Ratio"].dropna()
-        y_values = rrg_data[f"{sector}_RS-Momentum"].dropna()
-        
+        x_values = rrg_data[f"{sector}_RS-Ratio"].iloc[-tail_length:].dropna()
+        y_values = rrg_data[f"{sector}_RS-Momentum"].iloc[-tail_length:].dropna()
         if len(x_values) > 0 and len(y_values) > 0:
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
@@ -234,23 +231,13 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 legend_label = f"{sector} ({sector_names.get(sector, '')})"
                 chart_label = f"{sector_names.get(sector, sector)}"
             
-            # Plot the entire history as a light line
             fig.add_trace(go.Scatter(
-                x=x_values, y=y_values, mode='lines', name=legend_label,
-                line=dict(color=color, width=1, dash='dot'), opacity=0.3,
-                legendgroup=sector, showlegend=False
-            ))
-            
-            # Plot the tail
-            tail_x = x_values.iloc[-tail_length:]
-            tail_y = y_values.iloc[-tail_length:]
-            fig.add_trace(go.Scatter(
-                x=tail_x, y=tail_y, mode='lines+markers', name=legend_label,
+                x=x_values, y=y_values, mode='lines+markers', name=legend_label,
                 line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
                 legendgroup=sector, showlegend=True
             ))
             
-            # Add the latest point label
+            # Add only the latest point as a larger marker with text
             fig.add_trace(go.Scatter(
                 x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
                 name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
@@ -285,6 +272,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
+
 
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
