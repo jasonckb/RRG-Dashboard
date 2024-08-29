@@ -13,12 +13,14 @@ st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by J
 # Function to reset custom tickers
 def reset_custom_tickers():
     st.session_state.reset_tickers = True
-    raise RerunException(RerunData(widget_states=None))
+    st.session_state.custom_tickers = get_preset_portfolio()
+    st.rerun()
 
 # Function to refresh data for the current universe
 def refresh_data():
     st.cache_data.clear()
     st.session_state.data_refreshed = True
+    st.rerun()
 
 def get_preset_portfolio():
     return ["700.HK", "9988.HK", "9618.HK", "9999.HK", "3690.HK", "1810.HK", "9961.HK", "285.HK", "2018.HK", "1211.HK", "2015.HK", "1299.HK", "3968.HK", "2318.HK", "1336.HK"]
@@ -280,15 +282,22 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
-
-# Main Streamlit app
-st.title("Relative Rotation Graph (RRG) by JC")
-
 # Initialize session state
 if 'selected_universe' not in st.session_state:
     st.session_state.selected_universe = "WORLD"
 if 'data_refreshed' not in st.session_state:
     st.session_state.data_refreshed = False
+if 'timeframe' not in st.session_state:
+    st.session_state.timeframe = "Weekly"
+if 'tail_length' not in st.session_state:
+    st.session_state.tail_length = 5
+if 'custom_tickers' not in st.session_state:
+    st.session_state.custom_tickers = get_preset_portfolio()
+if 'custom_benchmark' not in st.session_state:
+    st.session_state.custom_benchmark = "^HSI"
+
+# Main Streamlit app
+st.title("Relative Rotation Graph (RRG) by JC")
 
 # Sidebar
 st.sidebar.header("Chart Settings")
@@ -300,17 +309,20 @@ if st.sidebar.button("Refresh Data"):
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
     options=["Weekly", "Daily"],
-    key="timeframe_selector"
+    key="timeframe_selector",
+    index=["Weekly", "Daily"].index(st.session_state.timeframe)
 )
+st.session_state.timeframe = timeframe
 
 tail_length = st.sidebar.slider(
     "Tail Length",
     min_value=1,
     max_value=52,
-    value=5,
+    value=st.session_state.tail_length,
     step=1,
     help="Number of data points to show in the chart"
 )
+st.session_state.tail_length = tail_length
 
 st.sidebar.header("Universe Selection")
 
@@ -332,8 +344,6 @@ selected_universe = st.sidebar.selectbox(
     key="universe_selector",
     index=universe_options.index(st.session_state.selected_universe)
 )
-
-# Update the selected universe in session state
 st.session_state.selected_universe = selected_universe
 
 sector = None
@@ -371,12 +381,6 @@ elif selected_universe == "HK Sub-indexes":
 elif selected_universe == "Customised Portfolio":
     st.sidebar.subheader("Customised Portfolio")
     
-    if 'reset_tickers' not in st.session_state:
-        st.session_state.reset_tickers = False
-
-    if 'custom_tickers' not in st.session_state or st.session_state.reset_tickers:
-        st.session_state.custom_tickers = get_preset_portfolio()
-
     col1, col2, col3 = st.sidebar.columns(3)
     
     custom_tickers = []
@@ -402,17 +406,14 @@ elif selected_universe == "Customised Portfolio":
     custom_benchmark = st.sidebar.selectbox(
         "Select Benchmark",
         options=["ACWI", "^GSPC", "^HSI"],
-        key="custom_benchmark_selector"
+        key="custom_benchmark_selector",
+        index=["ACWI", "^GSPC", "^HSI"].index(st.session_state.custom_benchmark)
     )
+    st.session_state.custom_benchmark = custom_benchmark
 
     # Add Reset button
     if st.sidebar.button("Reset to Preset Portfolio"):
-        st.session_state.custom_tickers = get_preset_portfolio()
-        st.rerun()
-
-    # Reset the flag after use
-    if st.session_state.reset_tickers:
-        st.session_state.reset_tickers = False
+        reset_custom_tickers()
 
 # Main content area
 if selected_universe:
