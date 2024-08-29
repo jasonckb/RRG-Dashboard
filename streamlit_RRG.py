@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
 
-
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
 
@@ -16,16 +15,10 @@ def reset_custom_tickers():
     st.session_state.reset_tickers = True
     raise RerunException(RerunData(widget_states=None))
 
+# Add this new function for the Refresh button
 def refresh_data():
-    # Clear all cached data
     st.cache_data.clear()
-    # Rerun the app
-    raise RerunException(RerunData(widget_states=None))
-
-# In the sidebar, add the Refresh button
-st.sidebar.header("Data Control")
-if st.sidebar.button("Refresh Data"):
-    refresh_data()
+    st.rerun()
 
 @st.cache_data
 def ma(data, period):
@@ -186,6 +179,7 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
+
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe, tail_length):
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
@@ -284,12 +278,10 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 
     return fig
 
-
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
 
-# In the sidebar, add the Refresh button
-st.sidebar.header("Data Control")
+# Add Refresh button at the top of the sidebar
 if st.sidebar.button("Refresh Data"):
     refresh_data()
 
@@ -421,4 +413,3 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
-
