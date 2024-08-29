@@ -20,6 +20,9 @@ def refresh_data():
     st.cache_data.clear()
     st.session_state.data_refreshed = True
 
+def get_preset_portfolio():
+    return ["700.HK", "9988.HK", "9618.HK", "9999.HK", "3690.HK", "1810.HK", "9961.HK", "285.HK", "2018.HK", "1211.HK", "2015.HK", "1299.HK", "3968.HK", "2318.HK", "1336.HK"]
+
 @st.cache_data
 def ma(data, period):
     return data.rolling(window=period).mean()
@@ -371,16 +374,19 @@ elif selected_universe == "Customised Portfolio":
     if 'reset_tickers' not in st.session_state:
         st.session_state.reset_tickers = False
 
+    if 'custom_tickers' not in st.session_state or st.session_state.reset_tickers:
+        st.session_state.custom_tickers = get_preset_portfolio()
+
     col1, col2, col3 = st.sidebar.columns(3)
     
     custom_tickers = []
     for i in range(15):
         if i % 3 == 0:
-            ticker = col1.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
+            ticker = col1.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value=st.session_state.custom_tickers[i] if i < len(st.session_state.custom_tickers) else "")
         elif i % 3 == 1:
-            ticker = col2.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
+            ticker = col2.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value=st.session_state.custom_tickers[i] if i < len(st.session_state.custom_tickers) else "")
         else:
-            ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value="" if st.session_state.reset_tickers else st.session_state.get(f"stock_{i+1}", ""))
+            ticker = col3.text_input(f"Stock {i+1}", key=f"stock_{i+1}", value=st.session_state.custom_tickers[i] if i < len(st.session_state.custom_tickers) else "")
         
         if ticker:
             if ticker.isalpha():
@@ -391,6 +397,8 @@ elif selected_universe == "Customised Portfolio":
                 processed_ticker = ticker
             custom_tickers.append(processed_ticker)
     
+    st.session_state.custom_tickers = custom_tickers
+
     custom_benchmark = st.sidebar.selectbox(
         "Select Benchmark",
         options=["ACWI", "^GSPC", "^HSI"],
@@ -398,8 +406,9 @@ elif selected_universe == "Customised Portfolio":
     )
 
     # Add Reset button
-    if st.sidebar.button("Reset"):
-        reset_custom_tickers()
+    if st.sidebar.button("Reset to Preset Portfolio"):
+        st.session_state.custom_tickers = get_preset_portfolio()
+        st.rerun()
 
     # Reset the flag after use
     if st.session_state.reset_tickers:
