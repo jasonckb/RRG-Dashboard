@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
 
+# Custom exception definition
+class GitHubFetchError(Exception):
+    pass
+    
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
 
@@ -20,8 +24,26 @@ def refresh_data():
     st.cache_data.clear()
     st.session_state.data_refreshed = True
 
+# These functions can be placed where you keep your utility functions
+def fetch_portfolio_from_github():
+    url = "https://raw.githubusercontent.com/jasonckb/RRG-Dashboard/main/Customised%20Portfolio.txt"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+        tickers = [line.strip() for line in response.text.split('\n') if line.strip()]
+        if not tickers:
+            raise GitHubFetchError("No tickers found in the GitHub file.")
+        return tickers
+    except requests.RequestException as e:
+        raise GitHubFetchError(f"Failed to fetch portfolio from GitHub: {e}")
+
 def get_preset_portfolio():
-    return ["700.HK", "9988.HK", "9618.HK", "9999.HK", "3690.HK", "1810.HK", "9961.HK", "285.HK", "2018.HK", "1211.HK", "2015.HK", "1299.HK", "3968.HK", "2318.HK", "1336.HK"]
+    try:
+        return fetch_portfolio_from_github()
+    except GitHubFetchError as e:
+        st.error(str(e))
+        st.error("Unable to load preset portfolio. Please check your internet connection or try again later.")
+        return None
 
 @st.cache_data
 def ma(data, period):
