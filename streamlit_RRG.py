@@ -282,19 +282,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
     return fig
-# Initialize session state
-if 'selected_universe' not in st.session_state:
-    st.session_state.selected_universe = "WORLD"
-if 'data_refreshed' not in st.session_state:
-    st.session_state.data_refreshed = False
-if 'timeframe' not in st.session_state:
-    st.session_state.timeframe = "Weekly"
-if 'tail_length' not in st.session_state:
-    st.session_state.tail_length = 5
-if 'custom_tickers' not in st.session_state:
-    st.session_state.custom_tickers = get_preset_portfolio()
-if 'custom_benchmark' not in st.session_state:
-    st.session_state.custom_benchmark = "^HSI"
+
 
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
