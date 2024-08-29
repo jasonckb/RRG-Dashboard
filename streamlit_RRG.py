@@ -188,20 +188,22 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         rrg_data[f"{sector}_RS-Ratio"] = rs_ratio
         rrg_data[f"{sector}_RS-Momentum"] = rs_momentum
 
-    last_n_periods = rrg_data.iloc[-tail_length:]  # Use the tail_length parameter here
+    # Calculate boundaries based on all historical data
+    all_rs_ratio = np.concatenate([rrg_data[f"{sector}_RS-Ratio"].dropna() for sector in sectors])
+    all_rs_momentum = np.concatenate([rrg_data[f"{sector}_RS-Momentum"].dropna() for sector in sectors])
 
     padding = 0.1
-    min_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].min().min()
-    max_x = last_n_periods[[f"{sector}_RS-Ratio" for sector in sectors]].max().max()
-    min_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].min().min()
-    max_y = last_n_periods[[f"{sector}_RS-Momentum" for sector in sectors]].max().max()
+    min_x = np.min(all_rs_ratio)
+    max_x = np.max(all_rs_ratio)
+    min_y = np.min(all_rs_momentum)
+    max_y = np.max(all_rs_momentum)
 
     range_x = max_x - min_x
     range_y = max_y - min_y
-    min_x = max(min_x - range_x * padding, 90)
-    max_x = min(max_x + range_x * padding, 110)
-    min_y = max(min_y - range_y * padding, 90)
-    max_y = min(max_y + range_y * padding, 110)
+    min_x = min_x - range_x * padding
+    max_x = max_x + range_x * padding
+    min_y = min_y - range_y * padding
+    max_y = max_y + range_y * padding
 
     fig = go.Figure()
 
@@ -215,8 +217,9 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
         else: return "Leading"
 
     for sector in sectors:
-        x_values = last_n_periods[f"{sector}_RS-Ratio"].dropna()
-        y_values = last_n_periods[f"{sector}_RS-Momentum"].dropna()
+        x_values = rrg_data[f"{sector}_RS-Ratio"].dropna()
+        y_values = rrg_data[f"{sector}_RS-Momentum"].dropna()
+        
         if len(x_values) > 0 and len(y_values) > 0:
             current_quadrant = get_quadrant(x_values.iloc[-1], y_values.iloc[-1])
             color = curve_colors[current_quadrant]
@@ -231,19 +234,27 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
                 legend_label = f"{sector} ({sector_names.get(sector, '')})"
                 chart_label = f"{sector_names.get(sector, sector)}"
             
+            # Plot the entire history as a light line
             fig.add_trace(go.Scatter(
-                x=x_values, y=y_values, mode='lines+markers', name=legend_label,
+                x=x_values, y=y_values, mode='lines', name=legend_label,
+                line=dict(color=color, width=1, dash='dot'), opacity=0.3,
+                legendgroup=sector, showlegend=False
+            ))
+            
+            # Plot the tail
+            tail_x = x_values.iloc[-tail_length:]
+            tail_y = y_values.iloc[-tail_length:]
+            fig.add_trace(go.Scatter(
+                x=tail_x, y=tail_y, mode='lines+markers', name=legend_label,
                 line=dict(color=color, width=2), marker=dict(size=6, symbol='circle'),
                 legendgroup=sector, showlegend=True
             ))
             
-            momentum_change = y_values.iloc[-1] - y_values.iloc[-2] if len(y_values) > 1 else 0
-            text_position = "top center" if momentum_change >= 0 else "bottom center"
-            
+            # Add the latest point label
             fig.add_trace(go.Scatter(
                 x=[x_values.iloc[-1]], y=[y_values.iloc[-1]], mode='markers+text',
                 name=f"{sector} (latest)", marker=dict(color=color, size=12, symbol='circle'),
-                text=[chart_label], textposition=text_position, legendgroup=sector, showlegend=False,
+                text=[chart_label], textposition="top center", legendgroup=sector, showlegend=False,
                 textfont=dict(color='black', size=12, family='Arial Black')
             ))
 
