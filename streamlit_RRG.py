@@ -16,6 +16,17 @@ def reset_custom_tickers():
     st.session_state.reset_tickers = True
     raise RerunException(RerunData(widget_states=None))
 
+def refresh_data():
+    # Clear all cached data
+    st.cache_data.clear()
+    # Rerun the app
+    raise RerunException(RerunData(widget_states=None))
+
+# In the sidebar, add the Refresh button
+st.sidebar.header("Data Control")
+if st.sidebar.button("Refresh Data"):
+    refresh_data()
+
 @st.cache_data
 def ma(data, period):
     return data.rolling(window=period).mean()
@@ -277,6 +288,11 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
 
+# In the sidebar, add the Refresh button
+st.sidebar.header("Data Control")
+if st.sidebar.button("Refresh Data"):
+    refresh_data()
+
 st.sidebar.header("Chart Settings")
 
 timeframe = st.sidebar.selectbox(
@@ -389,7 +405,7 @@ elif selected_universe == "Customised Portfolio":
 if selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
-        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe, tail_length)  # Added tail_length here
+        fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe, tail_length)
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
         st.dataframe(data.tail())
@@ -405,3 +421,4 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+
