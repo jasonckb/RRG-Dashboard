@@ -15,7 +15,7 @@ def reset_custom_tickers():
     st.session_state.reset_tickers = True
     raise RerunException(RerunData(widget_states=None))
 
-# Add this new function for the Refresh button
+# Modified refresh_data function
 def refresh_data():
     st.cache_data.clear()
     st.rerun()
@@ -281,11 +281,13 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
 # Main Streamlit app
 st.title("Relative Rotation Graph (RRG) by JC")
 
+# Sidebar
+st.sidebar.header("Chart Settings")
+
 # Add Refresh button at the top of the sidebar
 if st.sidebar.button("Refresh Data"):
     refresh_data()
-
-st.sidebar.header("Chart Settings")
+    st.success("Data refreshed successfully!")
 
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
@@ -413,3 +415,4 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+ 
