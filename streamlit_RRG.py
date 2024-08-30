@@ -39,6 +39,28 @@ def get_preset_portfolio():
         return None
 
 
+def refresh_data():
+    try:
+        # Clear all cached data
+        st.cache_data.clear()
+        
+        # Re-fetch data for the current universe
+        universe = st.session_state.get('selected_universe', 'WORLD')
+        sector = st.session_state.get('sector', None)
+        timeframe = st.session_state.get('timeframe', 'Weekly')
+        custom_tickers = st.session_state.get('custom_tickers', None)
+        custom_benchmark = st.session_state.get('custom_benchmark', None)
+        
+        # Call get_data with current parameters to refresh the data
+        get_data(universe, sector, timeframe, custom_tickers, custom_benchmark)
+        
+        st.session_state.data_refreshed = True
+        st.success("Data refreshed successfully!")
+    except Exception as e:
+        st.error(f"An error occurred while refreshing data: {str(e)}")
+        st.session_state.data_refreshed = False
+
+
 @st.cache_data
 def ma(data, period):
     return data.rolling(window=period).mean()
@@ -420,6 +442,12 @@ elif selected_universe == "Customised Portfolio":
         options=["ACWI", "^GSPC", "^HSI"],
         key="custom_benchmark_selector"
     )
+
+    #refresh
+    if st.sidebar.button("Refresh Data"):
+    refresh_data()
+    st.rerun()
+
 
     # Add Reset button
     if st.sidebar.button("Reset to Preset Portfolio"):
