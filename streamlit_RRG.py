@@ -332,7 +332,7 @@ if 'data_refreshed' not in st.session_state:
 st.sidebar.header("Chart Settings")
 
 # Add Refresh button at the top of the sidebar
-    if st.sidebar.button("Refresh Data"):
+if st.sidebar.button("Refresh Data"):
     refresh_data()
     st.rerun()
 
