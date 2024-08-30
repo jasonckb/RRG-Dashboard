@@ -332,8 +332,9 @@ if 'data_refreshed' not in st.session_state:
 st.sidebar.header("Chart Settings")
 
 # Add Refresh button at the top of the sidebar
-if st.sidebar.button("Refresh Data"):
+    if st.sidebar.button("Refresh Data"):
     refresh_data()
+    st.rerun()
 
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
@@ -443,7 +444,6 @@ elif selected_universe == "Customised Portfolio":
         key="custom_benchmark_selector"
     )
 
-
     # Add Reset button
     if st.sidebar.button("Reset to Preset Portfolio"):
         st.session_state.custom_tickers = get_preset_portfolio()
@@ -477,6 +477,10 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+
+ 
+
+ 
 
  
 
