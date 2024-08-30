@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
 
+# Set page config to wide layout
+st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
+
 class GitHubFetchError(Exception):
     pass
 
