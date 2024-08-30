@@ -443,11 +443,6 @@ elif selected_universe == "Customised Portfolio":
         key="custom_benchmark_selector"
     )
 
-    #refresh
-    if st.sidebar.button("Refresh Data"):
-    refresh_data()
-    st.rerun()
-
 
     # Add Reset button
     if st.sidebar.button("Reset to Preset Portfolio"):
