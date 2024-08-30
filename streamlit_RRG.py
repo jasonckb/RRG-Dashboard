@@ -453,8 +453,7 @@ elif selected_universe == "Customised Portfolio":
     if st.session_state.reset_tickers:
         st.session_state.reset_tickers = False
 
-# Main content area
-if selected_universe:
+# Main content areaif selected_universe:
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
         fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe, tail_length)
@@ -476,7 +475,8 @@ if st.checkbox("Show raw data"):
     st.write("Sectors:")
     st.write(sectors)
     st.write("Benchmark:")
-    st.write(benchmark)​​​​​​​​​​​​​​​​
+    st.write(benchmark)
+
 
  
 
