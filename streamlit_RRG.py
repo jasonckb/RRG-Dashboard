@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import pytz
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
 
@@ -78,11 +79,34 @@ def calculate_rrg_values(data, benchmark):
 
 @st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
-    end_date = datetime.now()
+    # Get the current time in Hong Kong
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
+    hk_time = datetime.now(hk_tz)
+    
+    # Determine the end date based on the universe
+    if universe in ["HK", "HK Sub-indexes"] or (universe == "Customised Portfolio" and custom_benchmark == "^HSI"):
+        end_date = hk_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        market_close_time = hk_time.replace(hour=16, minute=0, second=0, microsecond=0)
+        if hk_time < market_close_time:
+            end_date -= timedelta(days=1)
+        time_info = f"Current Hong Kong time: {hk_time.strftime('%Y-%m-%d %H:%M:%S')}"
+    else:
+        # For US markets, use New York time
+        ny_tz = pytz.timezone('America/New_York')
+        ny_time = datetime.now(ny_tz)
+        end_date = ny_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        market_close_time = ny_time.replace(hour=16, minute=0, second=0, microsecond=0)
+        if ny_time < market_close_time:
+            end_date -= timedelta(days=1)
+        time_info = f"Current New York time: {ny_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
     if timeframe == "Weekly":
         start_date = end_date - timedelta(weeks=100)
     else:  # Daily
         start_date = end_date - timedelta(days=500)
+
+    st.info(time_info)
+    st.info(f"Fetching data up to: {end_date.strftime('%Y-%m-%d')}")
 
     sector_universes = {
         "US": {
