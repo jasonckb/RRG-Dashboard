@@ -10,10 +10,15 @@ import streamlit.components.v1 as components
 # Set page config to wide layout
 st.set_page_config(layout="wide", page_title="Relative Rotation Graph (RRG) by JC")
 
+# Debug function
+def debug_print(message):
+    st.write(f"DEBUG: {message}")
+
 class GitHubFetchError(Exception):
     pass
 
 def fetch_portfolio_from_github():
+    debug_print("Entering fetch_portfolio_from_github function")
     try:
         import requests
     except ImportError:
@@ -22,15 +27,17 @@ def fetch_portfolio_from_github():
     url = "https://raw.githubusercontent.com/jasonckb/RRG-Dashboard/main/Customised%20Portfolio.txt"
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+        response.raise_for_status()
         tickers = [line.strip() for line in response.text.split('\n') if line.strip()]
         if not tickers:
             raise GitHubFetchError("No tickers found in the GitHub file.")
+        debug_print(f"Successfully fetched {len(tickers)} tickers from GitHub")
         return tickers
     except requests.RequestException as e:
         raise GitHubFetchError(f"Failed to fetch portfolio from GitHub: {e}")
 
 def get_preset_portfolio():
+    debug_print("Entering get_preset_portfolio function")
     try:
         return fetch_portfolio_from_github()
     except GitHubFetchError as e:
@@ -38,20 +45,16 @@ def get_preset_portfolio():
         st.error("Unable to load preset portfolio. Please check your internet connection or try again later.")
         return None
 
-
 def refresh_data():
+    debug_print("Entering refresh_data function")
     try:
-        # Clear all cached data
         st.cache_data.clear()
-        
-        # Re-fetch data for the current universe
         universe = st.session_state.get('selected_universe', 'WORLD')
         sector = st.session_state.get('sector', None)
         timeframe = st.session_state.get('timeframe', 'Weekly')
         custom_tickers = st.session_state.get('custom_tickers', None)
         custom_benchmark = st.session_state.get('custom_benchmark', None)
         
-        # Call get_data with current parameters to refresh the data
         get_data(universe, sector, timeframe, custom_tickers, custom_benchmark)
         
         st.session_state.data_refreshed = True
@@ -60,13 +63,14 @@ def refresh_data():
         st.error(f"An error occurred while refreshing data: {str(e)}")
         st.session_state.data_refreshed = False
 
-
 @st.cache_data
 def ma(data, period):
+    debug_print(f"Calculating moving average with period {period}")
     return data.rolling(window=period).mean()
 
 @st.cache_data
 def calculate_rrg_values(data, benchmark):
+    debug_print("Entering calculate_rrg_values function")
     sbr = data / benchmark
     rs1 = ma(sbr, 10)
     rs2 = ma(sbr, 26)
@@ -78,6 +82,7 @@ def calculate_rrg_values(data, benchmark):
 
 @st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
+    debug_print(f"Entering get_data function with universe={universe}, sector={sector}, timeframe={timeframe}")
     end_date = datetime.now()
     if timeframe == "Weekly":
         start_date = end_date - timedelta(weeks=100)
@@ -168,46 +173,53 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
 
     try:
         tickers_to_download = [benchmark] + sectors
-        st.info(f"Attempting to download data for: {', '.join(tickers_to_download)}")
+        debug_print(f"Attempting to download data for: {', '.join(tickers_to_download)}")
         
         data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
+        debug_print(f"Downloaded data shape: {data.shape}")
         
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
-            st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
+            debug_print(f"Missing tickers: {', '.join(missing_tickers)}")
             
             if universe == "WORLD":
                 if "^TWII" in missing_tickers:
-                    st.info("Attempting to download alternative for ^TWII: TAIEX")
+                    debug_print("Attempting to download alternative for ^TWII: TAIEX")
                     twii_data = yf.download("TAIEX", start=start_date, end=end_date)['Close']
                     if not twii_data.empty:
                         data["^TWII"] = twii_data
                         missing_tickers.remove("^TWII")
-                        st.success("Successfully downloaded TAIEX as a proxy for ^TWII")
+                        debug_print("Successfully downloaded TAIEX as a proxy for ^TWII")
                 
                 if "3032.HK" in missing_tickers:
-                    st.info("Attempting to download alternative for 3032.HK: ^HSTECH")
+                    debug_print("Attempting to download alternative for 3032.HK: ^HSTECH")
                     hstech_data = yf.download("^HSTECH", start=start_date, end=end_date)['Close']
                     if not hstech_data.empty:
                         data["3032.HK"] = hstech_data
                         missing_tickers.remove("3032.HK")
-                        st.success("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
+                        debug_print("Successfully downloaded ^HSTECH as a proxy for 3032.HK")
             
             for missing_ticker in missing_tickers:
                 data[missing_ticker] = pd.Series(index=data.index, dtype='float64')
+                debug_print(f"Added empty series for missing ticker: {missing_ticker}")
 
         if data.empty:
+            debug_print("Downloaded data is empty")
             st.error(f"No data available for the selected universe and sector.")
             return None, benchmark, sectors, sector_names
         
         data = data.dropna(axis=1, how='all')
+        debug_print(f"Data shape after dropping NA columns: {data.shape}")
         
         if benchmark not in data.columns:
+            debug_print(f"Benchmark {benchmark} not in data columns")
             st.error(f"No data available for the benchmark {benchmark}. Please choose a different benchmark.")
             return None, benchmark, sectors, sector_names
         
         valid_sectors = [s for s in sectors if s in data.columns]
+        debug_print(f"Number of valid sectors: {len(valid_sectors)}")
         if len(valid_sectors) == 0:
+            debug_print("No valid sector data available")
             st.error("No valid sector data available. Please check your input and try again.")
             return None, benchmark, sectors, sector_names
         
@@ -215,13 +227,19 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         sector_names = {s: sector_names[s] for s in valid_sectors if s in sector_names}
         
     except Exception as e:
+        debug_print(f"Error fetching data: {str(e)}")
         st.error(f"Error fetching data: {str(e)}")
         return None, benchmark, sectors, sector_names
 
-    st.success(f"Successfully downloaded data for {len(data.columns)} tickers.")
+    debug_print(f"Successfully downloaded data for {len(data.columns)} tickers.")
     return data, benchmark, sectors, sector_names
 
 def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe, tail_length):
+    debug_print("Entering create_rrg_chart function")
+    debug_print(f"Data shape: {data.shape}")
+    debug_print(f"Benchmark: {benchmark}")
+    debug_print(f"Number of sectors: {len(sectors)}")
+
     if timeframe == "Weekly":
         data_resampled = data.resample('W-FRI').last()
     else:  # Daily
@@ -317,6 +335,7 @@ def create_rrg_chart(data, benchmark, sectors, sector_names, universe, timeframe
     fig.add_annotation(x=min_x, y=max_y, text="改善", showarrow=False, font=label_font, xanchor="left", yanchor="top")
     fig.add_annotation(x=max_x, y=max_y, text="領先", showarrow=False, font=label_font, xanchor="right", yanchor="top")
 
+    debug_print("Finished creating RRG chart")
     return fig
 
 # Main Streamlit app
@@ -453,9 +472,21 @@ elif selected_universe == "Customised Portfolio":
     if st.session_state.reset_tickers:
         st.session_state.reset_tickers = False
 
-# Main content areaif selected_universe:
+# Main content area
+if selected_universe:
+    debug_print(f"Selected universe: {selected_universe}")
+    debug_print(f"Sector: {sector}")
+    debug_print(f"Timeframe: {timeframe}")
+    debug_print(f"Custom tickers: {custom_tickers}")
+    debug_print(f"Custom benchmark: {custom_benchmark}")
+
     data, benchmark, sectors, sector_names = get_data(selected_universe, sector, timeframe, custom_tickers, custom_benchmark)
     if data is not None and not data.empty:
+        debug_print("Data retrieved successfully")
+        debug_print(f"Data shape: {data.shape}")
+        debug_print(f"Benchmark: {benchmark}")
+        debug_print(f"Number of sectors: {len(sectors)}")
+
         fig = create_rrg_chart(data, benchmark, sectors, sector_names, selected_universe, timeframe, tail_length)
         st.plotly_chart(fig, use_container_width=True)
         st.subheader("Latest Data")
@@ -476,6 +507,7 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+
 
 
  
