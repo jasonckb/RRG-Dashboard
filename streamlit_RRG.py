@@ -172,6 +172,16 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         
         data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
         
+        # Check the actual date range of the downloaded data
+        actual_start_date = data.index.min()
+        actual_end_date = data.index.max()
+        
+        st.info(f"Data available from {actual_start_date.date()} to {actual_end_date.date()}")
+        
+        if actual_end_date.date() < end_date.date() - timedelta(days=1):
+            st.warning(f"The most recent data available is from {actual_end_date.date()}. "
+                       f"This may be due to market holidays or delays in data updates.")
+        
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
             st.warning(f"The following tickers could not be downloaded: {', '.join(missing_tickers)}")
