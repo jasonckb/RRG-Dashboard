@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-import pytz
 from streamlit.runtime.scriptrunner import RerunData, RerunException
 import streamlit.components.v1 as components
 
@@ -79,34 +78,11 @@ def calculate_rrg_values(data, benchmark):
 
 @st.cache_data
 def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=None):
-    # Get the current time in Hong Kong
-    hk_tz = pytz.timezone('Asia/Hong_Kong')
-    hk_time = datetime.now(hk_tz)
-    
-    # Determine the end date based on the universe
-    if universe in ["HK", "HK Sub-indexes"] or (universe == "Customised Portfolio" and custom_benchmark == "^HSI"):
-        end_date = hk_time.replace(hour=0, minute=0, second=0, microsecond=0)
-        market_close_time = hk_time.replace(hour=16, minute=0, second=0, microsecond=0)
-        if hk_time < market_close_time:
-            end_date -= timedelta(days=1)
-        time_info = f"Current Hong Kong time: {hk_time.strftime('%Y-%m-%d %H:%M:%S')}"
-    else:
-        # For US markets, use New York time
-        ny_tz = pytz.timezone('America/New_York')
-        ny_time = datetime.now(ny_tz)
-        end_date = ny_time.replace(hour=0, minute=0, second=0, microsecond=0)
-        market_close_time = ny_time.replace(hour=16, minute=0, second=0, microsecond=0)
-        if ny_time < market_close_time:
-            end_date -= timedelta(days=1)
-        time_info = f"Current New York time: {ny_time.strftime('%Y-%m-%d %H:%M:%S')}"
-
+    end_date = datetime.now()
     if timeframe == "Weekly":
         start_date = end_date - timedelta(weeks=100)
     else:  # Daily
         start_date = end_date - timedelta(days=500)
-
-    st.info(time_info)
-    st.info(f"Fetching data up to: {end_date.strftime('%Y-%m-%d')}")
 
     sector_universes = {
         "US": {
@@ -195,16 +171,6 @@ def get_data(universe, sector, timeframe, custom_tickers=None, custom_benchmark=
         st.info(f"Attempting to download data for: {', '.join(tickers_to_download)}")
         
         data = yf.download(tickers_to_download, start=start_date, end=end_date)['Close']
-        
-        # Check the actual date range of the downloaded data
-        actual_start_date = data.index.min()
-        actual_end_date = data.index.max()
-        
-        st.info(f"Data available from {actual_start_date.date()} to {actual_end_date.date()}")
-        
-        if actual_end_date.date() < end_date.date() - timedelta(days=1):
-            st.warning(f"The most recent data available is from {actual_end_date.date()}. "
-                       f"This may be due to market holidays or delays in data updates.")
         
         missing_tickers = set(tickers_to_download) - set(data.columns)
         if missing_tickers:
@@ -511,6 +477,10 @@ if st.checkbox("Show raw data"):
     st.write(sectors)
     st.write("Benchmark:")
     st.write(benchmark)
+
+ 
+
+ 
 
  
 
