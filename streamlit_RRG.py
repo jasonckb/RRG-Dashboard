@@ -476,7 +476,7 @@ if st.checkbox("Show raw data"):
     st.write("Sectors:")
     st.write(sectors)
     st.write("Benchmark:")
-    st.write(benchmark)
+    st.write(benchmark)​​​​​​​​​​​​​​​​
 
  
 
