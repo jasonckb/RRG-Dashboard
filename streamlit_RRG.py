@@ -332,8 +332,9 @@ if 'data_refreshed' not in st.session_state:
 st.sidebar.header("Chart Settings")
 
 # Add Refresh button at the top of the sidebar
-if st.sidebar.button("Refresh Data"):
+    if st.sidebar.button("Refresh Data"):
     refresh_data()
+    st.rerun()
 
 timeframe = st.sidebar.selectbox(
     "Select Timeframe",
@@ -442,12 +443,6 @@ elif selected_universe == "Customised Portfolio":
         options=["ACWI", "^GSPC", "^HSI"],
         key="custom_benchmark_selector"
     )
-
-    #refresh
-    if st.sidebar.button("Refresh Data"):
-    refresh_data()
-    st.rerun()
-
 
     # Add Reset button
     if st.sidebar.button("Reset to Preset Portfolio"):
